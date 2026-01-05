@@ -17,7 +17,7 @@ CLIP_PATTERN = re.compile(r"\*\*Clip\s+(\d+)\s*\(.*?\):\*\*")
 # Match double-quoted text (allows apostrophes inside)
 SAYS_PATTERN = re.compile(r'Says:\s*"([^"]+)"', re.DOTALL)
 SCREENCAST_PATTERN = re.compile(
-    r"\[screencast:\s*(\w+)\s*@\s*([\d.]+)s?-([\d.]+)s?\s*(?:mode:(\w+))?\]",
+    r"\[screencast:\s*([\w\-\.]+)\s*@\s*([\d.]+)s?-([\d.]+)s?\s*(?:mode:(\w+))?\]",
     re.IGNORECASE,
 )
 CHARACTER_PATTERN = re.compile(r"\*\*(?:Persona|Character):\*\*\s*(.+)")

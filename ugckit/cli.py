@@ -104,6 +104,12 @@ def compose(
 
     # Override config with CLI options
     if mode == "pip":
+        click.echo(
+            "Warning: PiP mode is not yet implemented (Phase 2). Using overlay mode.",
+            err=True,
+        )
+        mode = "overlay"
+    if mode == "pip":
         cfg.composition.pip.head_position = Position(head_position)
 
     # Determine screencasts directory
@@ -137,8 +143,8 @@ def compose(
             click.echo(f"Available scripts: {[s.script_id for s in scripts]}", err=True)
             sys.exit(1)
 
-    # Sort avatar files
-    avatar_list = sorted(list(avatars))
+    # Keep avatar files in user-specified order
+    avatar_list = list(avatars)
 
     if len(avatar_list) < len(parsed_script.segments):
         click.echo(

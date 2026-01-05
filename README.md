@@ -15,7 +15,7 @@ AI UGC Video Assembly Tool - Combine AI avatar clips with app screencasts to cre
 
 ### System Requirements
 
-- Python 3.9+
+- Python 3.11+
 - FFmpeg (`brew install ffmpeg` on macOS)
 
 ### Install

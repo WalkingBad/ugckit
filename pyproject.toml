@@ -47,11 +47,14 @@ dev = [
 ugckit = "ugckit.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/nickolay/ugckit"
-Repository = "https://github.com/nickolay/ugckit"
+Homepage = "https://github.com/WalkingBad/ugckit"
+Repository = "https://github.com/WalkingBad/ugckit"
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml"]
 
 [tool.black]
 line-length = 100

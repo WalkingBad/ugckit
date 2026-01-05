@@ -5,17 +5,17 @@ composition:
     scale: 0.4              # 40% of screen width
     position: bottom-right  # top-left, top-right, bottom-left, bottom-right
     margin: 50              # pixels from edge
-    rotation: 5             # degrees tilt
-    shadow: true            # drop shadow effect
+    # rotation: 5           # (Phase 2) degrees tilt
+    # shadow: true          # (Phase 2) drop shadow effect
 
-  pip:
-    head_scale: 0.25        # 25% of screen width
-    head_position: top-right
-    head_margin: 30
+  # pip:                    # (Phase 2) PiP mode settings
+  #   head_scale: 0.25      # 25% of screen width
+  #   head_position: top-right
+  #   head_margin: 30
 
 output:
   fps: 30
-  bitrate: "8M"
+  # bitrate: "8M"           # (not used, crf controls quality)
   resolution: [1080, 1920]  # 9:16 vertical
   codec: libx264
   preset: medium            # ultrafast, fast, medium, slow
@@ -24,8 +24,8 @@ output:
 audio:
   normalize: true           # apply loudnorm filter
   target_loudness: -14      # LUFS for loudnorm
-  crossfade_ms: 100         # crossfade between segments
-  screencast_volume: 0.0    # mute screencast audio by default
+  # crossfade_ms: 100       # (Phase 2) crossfade between segments
+  # screencast_volume: 0.0  # (Phase 2) screencast audio volume
 
 paths:
   screencasts: ./assets/screencasts

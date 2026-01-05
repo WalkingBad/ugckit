@@ -95,8 +95,8 @@ audio:
 ## DO NOT
 
 1. Use `[\"']` in regex for quoted text (breaks on apostrophes)
-2. Assume Python 3.10+ syntax (must work on 3.9)
-3. Add MoviePy dependency (pure FFmpeg only)
+2. Add MoviePy dependency (pure FFmpeg only)
+3. Use PiP mode features until Phase 2 is implemented
 
 ## Related
 
