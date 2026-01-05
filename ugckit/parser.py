@@ -14,7 +14,8 @@ from ugckit.models import CompositionMode, Script, ScreencastOverlay, Segment
 # Regex patterns for parsing
 SCRIPT_HEADER_PATTERN = re.compile(r"###\s+Script\s+(\w+):\s+[\"']?(.+?)[\"']?\s*(?:\(|$)")
 CLIP_PATTERN = re.compile(r"\*\*Clip\s+(\d+)\s*\(.*?\):\*\*")
-SAYS_PATTERN = re.compile(r"Says:\s*[\"'](.+?)[\"']", re.DOTALL)
+# Match double-quoted text (allows apostrophes inside)
+SAYS_PATTERN = re.compile(r'Says:\s*"([^"]+)"', re.DOTALL)
 SCREENCAST_PATTERN = re.compile(
     r"\[screencast:\s*(\w+)\s*@\s*([\d.]+)s?-([\d.]+)s?\s*(?:mode:(\w+))?\]",
     re.IGNORECASE,
