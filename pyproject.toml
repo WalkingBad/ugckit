@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ugckit"
+version = "0.1.0"
+description = "AI UGC Video Assembly Tool - Combine AI avatars with app screencasts"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Nikolai Iakubovskii"}
+]
+keywords = ["ugc", "video", "ai", "tiktok", "reels", "ffmpeg"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+phase2 = [
+    "mediapipe>=0.10",
+    "rembg>=2.0",
+    "opencv-python>=4.8",
+    "pillow>=10.0",
+]
+phase3 = [
+    "openai-whisper>=20231117",
+]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+ugckit = "ugckit.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/nickolay/ugckit"
+Repository = "https://github.com/nickolay/ugckit"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "N", "W"]

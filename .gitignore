@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Assets (keep structure, ignore large files)
+assets/output/*.mp4
+assets/screencasts/*.mp4
+assets/avatars/*.mp4
+
+# But keep .gitkeep files
+!assets/**/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config overrides
+config/local.yaml

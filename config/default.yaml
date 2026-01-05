@@ -1,0 +1,32 @@
+# UGCKit Default Configuration
+
+composition:
+  overlay:
+    scale: 0.4              # 40% of screen width
+    position: bottom-right  # top-left, top-right, bottom-left, bottom-right
+    margin: 50              # pixels from edge
+    rotation: 5             # degrees tilt
+    shadow: true            # drop shadow effect
+
+  pip:
+    head_scale: 0.25        # 25% of screen width
+    head_position: top-right
+    head_margin: 30
+
+output:
+  fps: 30
+  bitrate: "8M"
+  resolution: [1080, 1920]  # 9:16 vertical
+  codec: libx264
+  preset: medium            # ultrafast, fast, medium, slow
+  crf: 23                   # quality (lower = better, 18-28 typical)
+
+audio:
+  normalize: true           # apply loudnorm filter
+  target_loudness: -14      # LUFS for loudnorm
+  crossfade_ms: 100         # crossfade between segments
+  screencast_volume: 0.0    # mute screencast audio by default
+
+paths:
+  screencasts: ./assets/screencasts
+  output: ./assets/output
