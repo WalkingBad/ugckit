@@ -70,8 +70,8 @@ Compose a video from script and avatar clips.
 | `--scripts-dir` | Directory containing script markdown files |
 | `--output, -o` | Output directory or file path |
 | `--config` | Path to config YAML file |
-| `--mode, -m` | Composition mode: `overlay` (default) or `pip` |
-| `--head-position` | Head position for PiP mode |
+| `--mode, -m` | Composition mode: `overlay` (default) or `pip` (Phase 2, shows warning) |
+| `--head-position` | Head position for PiP mode (Phase 2) |
 | `--dry-run` | Show timeline and FFmpeg command without rendering |
 
 ### `ugckit list-scripts`
@@ -128,7 +128,7 @@ Screencast fullscreen, avatar head cutout in corner.
 
 ## Configuration
 
-Edit `config/default.yaml`:
+Edit `ugckit/config/default.yaml`:
 
 ```yaml
 composition:
@@ -136,17 +136,9 @@ composition:
     scale: 0.4              # Screencast size (40% of width)
     position: bottom-right  # top-left, top-right, bottom-left, bottom-right
     margin: 50              # Pixels from edge
-    rotation: 5             # Degrees tilt
-    shadow: true
-
-  pip:
-    head_scale: 0.25
-    head_position: top-right
-    head_margin: 30
 
 output:
   fps: 30
-  bitrate: "8M"
   resolution: [1080, 1920]  # 9:16 vertical
   codec: libx264
   preset: medium
@@ -155,8 +147,6 @@ output:
 audio:
   normalize: true           # Apply loudnorm filter
   target_loudness: -14      # LUFS
-  crossfade_ms: 100
-  screencast_volume: 0.0    # Mute screencast audio
 
 paths:
   screencasts: ./assets/screencasts
@@ -201,9 +191,9 @@ ugckit/
 │   ├── parser.py       # Markdown → Script model
 │   ├── composer.py     # Timeline + FFmpeg composition
 │   ├── config.py       # YAML config loader
-│   └── models.py       # Pydantic data models
-├── config/
-│   └── default.yaml    # Default settings
+│   ├── models.py       # Pydantic data models
+│   └── config/
+│       └── default.yaml  # Default settings
 ├── assets/
 │   ├── screencasts/    # App screen recordings
 │   ├── avatars/        # AI avatar clips

@@ -42,6 +42,31 @@ def get_video_duration(video_path: Path) -> float:
     return float(result.stdout.strip())
 
 
+def has_audio_stream(video_path: Path) -> bool:
+    """Check if video file has an audio stream.
+
+    Args:
+        video_path: Path to video file.
+
+    Returns:
+        True if audio stream exists.
+    """
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "a",
+        "-show_entries",
+        "stream=index",
+        "-of",
+        "csv=p=0",
+        str(video_path),
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return bool(result.stdout.strip())
+
+
 def build_timeline(
     script: Script,
     avatar_clips: List[Path],
@@ -168,12 +193,14 @@ def position_to_overlay_coords(
 def build_ffmpeg_filter_overlay(
     timeline: Timeline,
     config: Config,
+    has_audio: bool = True,
 ) -> str:
     """Build FFmpeg filter_complex string for overlay mode.
 
     Args:
         timeline: Composition timeline.
         config: UGCKit configuration.
+        has_audio: Whether avatar clips have audio streams.
 
     Returns:
         FFmpeg filter_complex string.
@@ -196,13 +223,27 @@ def build_ffmpeg_filter_overlay(
     # Concatenate avatars
     if len(avatar_entries) > 1:
         concat_inputs = "".join(f"[av{i}]" for i in range(len(avatar_entries)))
-        audio_inputs = "".join(f"[{i}:a]" for i in range(len(avatar_entries)))
-        filters.append(
-            f"{concat_inputs}concat=n={len(avatar_entries)}:v=1:a=0[base];"
-            f"{audio_inputs}concat=n={len(avatar_entries)}:v=0:a=1[audio]"
-        )
+        if has_audio:
+            audio_inputs = "".join(f"[{i}:a]" for i in range(len(avatar_entries)))
+            filters.append(
+                f"{concat_inputs}concat=n={len(avatar_entries)}:v=1:a=0[base];"
+                f"{audio_inputs}concat=n={len(avatar_entries)}:v=0:a=1[audio]"
+            )
+        else:
+            # No audio - just concat video, generate silent audio
+            filters.append(
+                f"{concat_inputs}concat=n={len(avatar_entries)}:v=1:a=0[base];"
+                f"anullsrc=r=48000:cl=stereo,atrim=0:{timeline.total_duration:.2f}[audio]"
+            )
     else:
-        filters.append("[av0]copy[base];[0:a]anull[audio]")
+        if has_audio:
+            filters.append("[av0]copy[base];[0:a]anull[audio]")
+        else:
+            # No audio - generate silent audio
+            filters.append(
+                f"[av0]copy[base];"
+                f"anullsrc=r=48000:cl=stereo,atrim=0:{timeline.total_duration:.2f}[audio]"
+            )
 
     # Apply screencast overlays
     current_base = "base"
@@ -270,15 +311,18 @@ def compose_video(
     avatar_entries = [e for e in timeline.entries if e.type == "avatar"]
     screencast_entries = [e for e in timeline.entries if e.type == "screencast"]
 
-    # Build input arguments
+    # Build input arguments and check for audio
     inputs = []
+    all_have_audio = True
     for entry in avatar_entries:
         inputs.extend(["-i", str(entry.file)])
+        if not has_audio_stream(entry.file):
+            all_have_audio = False
     for entry in screencast_entries:
         inputs.extend(["-i", str(entry.file)])
 
     # Build filter complex
-    filter_complex = build_ffmpeg_filter_overlay(timeline, config)
+    filter_complex = build_ffmpeg_filter_overlay(timeline, config, has_audio=all_have_audio)
 
     # Build output arguments
     output_cfg = config.output

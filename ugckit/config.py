@@ -16,7 +16,7 @@ from ugckit.models import (
     PipConfig,
 )
 
-DEFAULT_CONFIG_PATH = Path(__file__).parent.parent / "config" / "default.yaml"
+DEFAULT_CONFIG_PATH = Path(__file__).parent / "config" / "default.yaml"
 
 
 def load_config(config_path: Optional[Path] = None) -> Config:
