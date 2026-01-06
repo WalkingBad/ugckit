@@ -251,7 +251,7 @@ ugckit/
 
 ### Как изменить позицию скринкаста?
 
-В `config/default.yaml` измените `composition.overlay.position`.
+В `ugckit/config/default.yaml` измените `composition.overlay.position`.
 
 ### Почему не работает PiP режим?
 

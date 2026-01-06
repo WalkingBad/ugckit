@@ -54,7 +54,7 @@ Repository = "https://github.com/WalkingBad/ugckit"
 where = ["."]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml"]
+"ugckit" = ["config/*.yaml"]
 
 [tool.black]
 line-length = 100

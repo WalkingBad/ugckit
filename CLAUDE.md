@@ -35,7 +35,7 @@ ugckit/
 | [parser.py](ugckit/parser.py) | Markdown script parser with SAYS_PATTERN, CLIP_PATTERN |
 | [composer.py](ugckit/composer.py) | FFmpeg filter_complex builder, `build_timeline()`, `compose_video()` |
 | [models.py](ugckit/models.py) | Pydantic models: Script, Segment, Timeline, Config |
-| [config/default.yaml](config/default.yaml) | Default composition settings |
+| [ugckit/config/default.yaml](ugckit/config/default.yaml) | Default composition settings |
 
 ## Data Flow
 
