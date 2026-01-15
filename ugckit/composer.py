@@ -19,6 +19,12 @@ from ugckit.models import (
 )
 
 
+class FFmpegError(Exception):
+    """FFmpeg/ffprobe execution error."""
+
+    pass
+
+
 def get_video_duration(video_path: Path) -> float:
     """Get duration of a video file using ffprobe.
 
@@ -27,7 +33,13 @@ def get_video_duration(video_path: Path) -> float:
 
     Returns:
         Duration in seconds.
+
+    Raises:
+        FFmpegError: If ffprobe fails or returns invalid data.
     """
+    if not video_path.exists():
+        raise FFmpegError(f"Video file not found: {video_path}")
+
     cmd = [
         "ffprobe",
         "-v",
@@ -38,8 +50,15 @@ def get_video_duration(video_path: Path) -> float:
         "default=noprint_wrappers=1:nokey=1",
         str(video_path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    return float(result.stdout.strip())
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        raise FFmpegError(f"ffprobe failed for {video_path}: {result.stderr}")
+
+    try:
+        return float(result.stdout.strip())
+    except ValueError as e:
+        raise FFmpegError(f"Invalid duration from ffprobe for {video_path}: {result.stdout}") from e
 
 
 def has_audio_stream(video_path: Path) -> bool:
@@ -50,7 +69,13 @@ def has_audio_stream(video_path: Path) -> bool:
 
     Returns:
         True if audio stream exists.
+
+    Raises:
+        FFmpegError: If ffprobe fails.
     """
+    if not video_path.exists():
+        raise FFmpegError(f"Video file not found: {video_path}")
+
     cmd = [
         "ffprobe",
         "-v",
@@ -64,6 +89,10 @@ def has_audio_stream(video_path: Path) -> bool:
         str(video_path),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        raise FFmpegError(f"ffprobe failed for {video_path}: {result.stderr}")
+
     return bool(result.stdout.strip())
 
 
@@ -83,7 +112,14 @@ def build_timeline(
 
     Returns:
         Timeline object with all entries.
+
+    Raises:
+        ValueError: If avatar_clips is empty.
+        FFmpegError: If video file is missing or invalid.
     """
+    if not avatar_clips:
+        raise ValueError("avatar_clips cannot be empty")
+
     entries: List[TimelineEntry] = []
     current_time = 0.0
 
@@ -94,10 +130,7 @@ def build_timeline(
         avatar_clip = avatar_clips[i]
 
         # Get actual duration from video file
-        try:
-            duration = get_video_duration(avatar_clip)
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            duration = segment.duration
+        duration = get_video_duration(avatar_clip)
 
         # Add avatar entry
         entries.append(
@@ -300,6 +333,24 @@ def build_ffmpeg_filter_overlay(
     return ";".join(filters)
 
 
+def validate_timeline_files(timeline: Timeline) -> None:
+    """Validate all files in timeline exist.
+
+    Args:
+        timeline: Timeline to validate.
+
+    Raises:
+        FFmpegError: If any file is missing.
+    """
+    missing = []
+    for entry in timeline.entries:
+        if not entry.file.exists():
+            missing.append(str(entry.file))
+
+    if missing:
+        raise FFmpegError(f"Missing files: {', '.join(missing)}")
+
+
 def compose_video(
     timeline: Timeline,
     config: Config,
@@ -314,9 +365,16 @@ def compose_video(
 
     Returns:
         Path to output video, or None if dry_run.
+
+    Raises:
+        ValueError: If timeline has no output_path.
+        FFmpegError: If files are missing or FFmpeg fails.
     """
     if not timeline.output_path:
         raise ValueError("Timeline must have output_path set")
+
+    # Validate all files exist before building command
+    validate_timeline_files(timeline)
 
     # Collect all input files
     avatar_entries = [e for e in timeline.entries if e.type == "avatar"]
@@ -354,9 +412,9 @@ def compose_video(
         "-r",
         str(output_cfg.fps),
         "-c:a",
-        "aac",
+        config.audio.codec,
         "-b:a",
-        "192k",
+        config.audio.bitrate,
         "-y",  # Overwrite output
         str(timeline.output_path),
     ]
@@ -373,6 +431,8 @@ def compose_video(
     timeline.output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Run FFmpeg
-    subprocess.run(cmd, check=True)
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise FFmpegError(f"FFmpeg failed: {result.stderr}")
 
     return timeline.output_path

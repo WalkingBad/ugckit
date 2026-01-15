@@ -24,8 +24,8 @@ output:
 audio:
   normalize: true           # apply loudnorm filter
   target_loudness: -14      # LUFS for loudnorm
-  # crossfade_ms: 100       # (Phase 2) crossfade between segments
-  # screencast_volume: 0.0  # (Phase 2) screencast audio volume
+  codec: aac                # audio codec
+  bitrate: 192k             # audio bitrate
 
 paths:
   screencasts: ./assets/screencasts

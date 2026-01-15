@@ -145,7 +145,7 @@ def parse_markdown_file(file_path: Path) -> List[Script]:
     Returns:
         List of parsed Script objects.
     """
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         content = f.read()
 
     scripts: List[Script] = []
@@ -206,3 +206,40 @@ def parse_scripts_directory(scripts_dir: Path) -> List[Script]:
         all_scripts.extend(scripts)
 
     return all_scripts
+
+
+def load_script(script_ref: str, scripts_dir: Optional[Path] = None) -> Script:
+    """Load a script by ID or file path.
+
+    Args:
+        script_ref: Script ID (e.g., "A1") or path to markdown file.
+        scripts_dir: Directory to search for scripts (default: current dir).
+
+    Returns:
+        Parsed Script object.
+
+    Raises:
+        FileNotFoundError: If script file or ID not found.
+        ValueError: If no scripts found in file.
+    """
+    script_path = Path(script_ref)
+
+    # Direct path to markdown file
+    if script_path.exists() and script_path.suffix == ".md":
+        scripts = parse_markdown_file(script_path)
+        if not scripts:
+            raise ValueError(f"No scripts found in {script_path}")
+        return scripts[0]
+
+    # Script ID - search in directory
+    search_dir = scripts_dir or Path(".")
+    scripts = parse_scripts_directory(search_dir)
+    found = find_script_by_id(scripts, script_ref)
+
+    if not found:
+        available = [s.script_id for s in scripts]
+        raise FileNotFoundError(
+            f"Script '{script_ref}' not found. Available: {available}"
+        )
+
+    return found

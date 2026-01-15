@@ -8,10 +8,10 @@ from typing import Optional, Tuple
 
 import click
 
-from ugckit.composer import build_timeline, compose_video, format_timeline
+from ugckit.composer import FFmpegError, build_timeline, compose_video, format_timeline
 from ugckit.config import load_config
 from ugckit.models import CompositionMode, Position
-from ugckit.parser import find_script_by_id, parse_markdown_file, parse_scripts_directory
+from ugckit.parser import load_script, parse_scripts_directory
 
 
 @click.group()
@@ -119,29 +119,11 @@ def compose(
         screencasts_dir = cfg.screencasts_path
 
     # Parse script
-    script_path = Path(script)
-    if script_path.exists() and script_path.suffix == ".md":
-        # Direct path to markdown file
-        scripts = parse_markdown_file(script_path)
-        if not scripts:
-            click.echo(f"Error: No scripts found in {script_path}", err=True)
-            sys.exit(1)
-        parsed_script = scripts[0]
-    else:
-        # Script ID - search in scripts directory
-        if scripts_dir:
-            search_dir = scripts_dir
-        else:
-            # Default: look in current directory or common locations
-            search_dir = Path(".")
-
-        scripts = parse_scripts_directory(search_dir)
-        parsed_script = find_script_by_id(scripts, script)
-
-        if not parsed_script:
-            click.echo(f"Error: Script '{script}' not found", err=True)
-            click.echo(f"Available scripts: {[s.script_id for s in scripts]}", err=True)
-            sys.exit(1)
+    try:
+        parsed_script = load_script(script, scripts_dir)
+    except (FileNotFoundError, ValueError) as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
 
     # Keep avatar files in user-specified order
     avatar_list = list(avatars)
@@ -162,12 +144,16 @@ def compose(
         output_path = cfg.output_path / f"{parsed_script.script_id}.mp4"
 
     # Build timeline
-    timeline = build_timeline(
-        script=parsed_script,
-        avatar_clips=avatar_list,
-        screencasts_dir=screencasts_dir,
-        output_path=output_path,
-    )
+    try:
+        timeline = build_timeline(
+            script=parsed_script,
+            avatar_clips=avatar_list,
+            screencasts_dir=screencasts_dir,
+            output_path=output_path,
+        )
+    except (ValueError, FFmpegError) as e:
+        click.echo(f"Error building timeline: {e}", err=True)
+        sys.exit(1)
 
     # Display timeline
     click.echo(format_timeline(timeline))
@@ -185,7 +171,7 @@ def compose(
     try:
         result_path = compose_video(timeline, cfg, dry_run=False)
         click.echo(f"Done! Output: {result_path}")
-    except Exception as e:
+    except (ValueError, FFmpegError) as e:
         click.echo(f"Error composing video: {e}", err=True)
         sys.exit(1)
 
@@ -237,23 +223,11 @@ def show_script(script: str, scripts_dir: Optional[Path]):
     Example:
         ugckit show-script --script A1_day347
     """
-    script_path = Path(script)
-
-    if script_path.exists() and script_path.suffix == ".md":
-        scripts = parse_markdown_file(script_path)
-        if scripts:
-            parsed_script = scripts[0]
-        else:
-            click.echo(f"No scripts found in {script_path}", err=True)
-            return
-    else:
-        search_dir = scripts_dir or Path(".")
-        scripts = parse_scripts_directory(search_dir)
-        parsed_script = find_script_by_id(scripts, script)
-
-        if not parsed_script:
-            click.echo(f"Script '{script}' not found", err=True)
-            return
+    try:
+        parsed_script = load_script(script, scripts_dir)
+    except (FileNotFoundError, ValueError) as e:
+        click.echo(f"Error: {e}", err=True)
+        return
 
     click.echo(f"Script: {parsed_script.script_id}")
     click.echo(f"Title: {parsed_script.title}")

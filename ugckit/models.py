@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Optional, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class CompositionMode(str, Enum):
@@ -80,8 +80,6 @@ class OverlayConfig(BaseModel):
     scale: float = 0.4
     position: Position = Position.BOTTOM_RIGHT
     margin: int = 50
-    rotation: float = 5.0
-    shadow: bool = True
 
 
 class PipConfig(BaseModel):
@@ -108,8 +106,8 @@ class AudioConfig(BaseModel):
 
     normalize: bool = True
     target_loudness: int = -14
-    crossfade_ms: int = 100
-    screencast_volume: float = 0.0
+    codec: str = "aac"
+    bitrate: str = "192k"
 
 
 class CompositionConfig(BaseModel):
@@ -127,3 +125,26 @@ class Config(BaseModel):
     audio: AudioConfig = Field(default_factory=AudioConfig)
     screencasts_path: Path = Path("./assets/screencasts")
     output_path: Path = Path("./assets/output")
+
+    @model_validator(mode="before")
+    @classmethod
+    def transform_yaml_structure(cls, data: dict) -> dict:
+        """Transform YAML structure to model structure."""
+        if not isinstance(data, dict):
+            return data
+
+        # Handle paths section from YAML
+        paths = data.pop("paths", {})
+        if paths:
+            if "screencasts" in paths:
+                data["screencasts_path"] = paths["screencasts"]
+            if "output" in paths:
+                data["output_path"] = paths["output"]
+
+        # Handle resolution as list -> tuple
+        if "output" in data and "resolution" in data["output"]:
+            res = data["output"]["resolution"]
+            if isinstance(res, list) and len(res) == 2:
+                data["output"]["resolution"] = tuple(res)
+
+        return data
