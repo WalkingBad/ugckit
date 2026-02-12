@@ -80,7 +80,7 @@ def _pos_selectbox(label: str, default: str, help_text: str, key: str | None = N
 
 
 # ---------------------------------------------------------------------------
-# Custom CSS
+# Custom CSS — Brutalist Swiss Style (dark theme + purple accent)
 # ---------------------------------------------------------------------------
 st.markdown(
     """
@@ -91,12 +91,15 @@ st.markdown(
 /* ── Base ─────────────────────────────────────────────────────────── */
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
 }
 
 :root {
     --accent: #7c5cfc;
     --accent-soft: rgba(124, 92, 252, .12);
     --accent-glow: rgba(124, 92, 252, .25);
+    --accent-bright: #9d85fd;
+    --accent-deep: #5a3fd6;
     --surface: rgba(255, 255, 255, .03);
     --surface-hover: rgba(255, 255, 255, .06);
     --border: rgba(255, 255, 255, .06);
@@ -110,6 +113,17 @@ html, body, [class*="css"] {
     --radius: 14px;
     --radius-sm: 10px;
     --radius-xs: 8px;
+}
+
+/* ── Noise texture overlay ───────────────────────────────────────── */
+.noise-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
 }
 
 /* ── Main container ──────────────────────────────────────────────── */
@@ -147,103 +161,136 @@ html, body, [class*="css"] {
     margin: 1rem 0 .5rem;
 }
 
+/* ── Brutalist sidebar branding ──────────────────────────────────── */
+.sidebar-logo {
+    font-size: 1.3rem;
+    font-weight: 300;
+    letter-spacing: .08em;
+    color: var(--text-primary);
+    margin-bottom: .15rem;
+}
+
+.sidebar-logo .dot {
+    color: var(--accent);
+    margin: 0 1px;
+}
+
+.sidebar-version {
+    font-size: .65rem;
+    font-weight: 300;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+}
+
+/* ── Numbered upload blocks ──────────────────────────────────────── */
+.upload-block {
+    border-bottom: 1px solid var(--border);
+    padding: .85rem 0 .5rem;
+}
+
+.upload-block:last-child {
+    border-bottom: none;
+}
+
+.upload-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: .3rem;
+}
+
+.upload-block-title {
+    font-size: .92rem;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+.upload-block-title .num-index {
+    font-weight: 300;
+    color: var(--text-muted);
+    margin-right: 6px;
+    font-size: .85rem;
+}
+
+.upload-block-status {
+    font-size: .6rem;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 3px;
+}
+
+.upload-block-status.required {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.upload-block-status.optional {
+    color: var(--text-muted);
+    background: rgba(255,255,255,.03);
+}
+
+.upload-block-meta {
+    font-size: .68rem;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    opacity: .7;
+    margin-bottom: .2rem;
+}
+
+.upload-block-hint {
+    font-size: .72rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: .35rem;
+    opacity: .8;
+}
+
+.upload-counter {
+    font-size: .72rem;
+    color: var(--text-muted);
+    margin-top: .15rem;
+}
+
 /* ── File uploader ───────────────────────────────────────────────── */
 [data-testid="stFileUploader"] {
     border-radius: var(--radius) !important;
     margin-bottom: .25rem !important;
 }
 
-[data-testid="stFileUploader"] section {
+/* Dropzone section (the dashed box) */
+[data-testid="stFileUploaderDropzone"] {
     background: var(--surface) !important;
-    border: 1.5px dashed rgba(124, 92, 252, .2) !important;
-    border-radius: var(--radius) !important;
-    padding: .85rem 1rem !important;
+    border: 1px dashed rgba(124, 92, 252, .15) !important;
+    border-radius: var(--radius-xs) !important;
+    padding: .65rem .75rem !important;
     transition: all .2s ease;
     min-height: auto !important;
 }
 
-[data-testid="stFileUploader"] section:hover {
+[data-testid="stFileUploaderDropzone"]:hover {
     border-color: rgba(124, 92, 252, .45) !important;
     background: var(--accent-soft) !important;
 }
 
-[data-testid="stFileUploader"] section > div {
-    color: var(--text-secondary) !important;
-    font-size: .78rem !important;
-}
-
-/* ── Translate built-in uploader text ────────────────────────────── */
-
-/* "Drag and drop files here" → Russian */
-[data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p,
-[data-testid="stFileUploader"] section > div:first-child > div:first-child > span,
-[data-testid="stFileUploaderDropzone"] span:first-of-type {
-    font-size: 0 !important;
-    line-height: 0 !important;
-}
-[data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p::after,
-[data-testid="stFileUploader"] section > div:first-child > div:first-child > span::after,
-[data-testid="stFileUploaderDropzone"] span:first-of-type::after {
-    content: "Перетащите файлы сюда";
-    font-size: .8rem !important;
-    line-height: 1.4 !important;
-    color: var(--text-secondary);
-}
-
-/* "Limit 400MB per file • ..." → Russian */
-[data-testid="stFileUploaderDropzone"] small,
-[data-testid="stFileUploader"] section small,
-[data-testid="stFileUploaderDropzoneInstructions"] > div > span:last-child {
-    font-size: 0 !important;
-    line-height: 0 !important;
-}
-[data-testid="stFileUploaderDropzone"] small::after,
-[data-testid="stFileUploader"] section small::after,
-[data-testid="stFileUploaderDropzoneInstructions"] > div > span:last-child::after {
-    content: "Макс. 400 МБ на файл";
-    font-size: .68rem !important;
-    line-height: 1.3 !important;
-    color: var(--text-muted);
-}
-
-/* "Browse files" button → Russian */
-[data-testid="stFileUploaderDropzone"] button,
-[data-testid="stFileUploader"] section button,
-[data-testid="baseButton-secondary"] {
-    font-size: 0 !important;
-}
-[data-testid="stFileUploaderDropzone"] button::after,
-[data-testid="stFileUploader"] section button::after,
-[data-testid="baseButton-secondary"]::after {
-    content: "Выбрать файлы";
-    font-size: .78rem !important;
-}
-
-/* "Drag and drop" main instruction div */
-[data-testid="stFileUploaderDropzoneInstructions"] > div > span:first-child {
-    font-size: 0 !important;
-    line-height: 0 !important;
-}
-[data-testid="stFileUploaderDropzoneInstructions"] > div > span:first-child::after {
-    content: "Перетащите файлы сюда";
-    font-size: .8rem !important;
-    line-height: 1.4 !important;
-    color: var(--text-secondary);
-}
-
 /* Uploader button base styles */
-[data-testid="stFileUploader"] button,
-[data-testid="stFileUploader"] section button {
+[data-testid="stFileUploaderDropzone"] button {
     background: var(--accent) !important;
     color: white !important;
     border: none !important;
     border-radius: var(--radius-xs) !important;
     font-weight: 600 !important;
-    padding: .4rem .85rem !important;
+    padding: .35rem .75rem !important;
+    font-size: .78rem !important;
     transition: all .2s ease !important;
 }
 
-[data-testid="stFileUploader"] button:hover {
+[data-testid="stFileUploaderDropzone"] button:hover {
     filter: brightness(1.15) !important;
     box-shadow: 0 4px 16px var(--accent-glow) !important;
 }
@@ -302,22 +349,29 @@ html, body, [class*="css"] {
     background: var(--surface-hover) !important;
     border-color: var(--border-accent) !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, .3) !important;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 }
 
-/* Primary button */
+/* Primary button — gradient hover like macket */
 [data-testid="stBaseButton-primary"],
 .stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #7c5cfc 0%, #5a3fd6 100%) !important;
     border: none !important;
     color: white !important;
     box-shadow: 0 4px 16px var(--accent-glow) !important;
+    text-transform: uppercase !important;
+    letter-spacing: .05em !important;
+    font-weight: 500 !important;
+    position: relative;
+    overflow: hidden;
+    transition: all .25s ease !important;
 }
 
 [data-testid="stBaseButton-primary"]:hover,
 .stButton > button[kind="primary"]:hover {
-    filter: brightness(1.1) !important;
-    box-shadow: 0 6px 24px rgba(124, 92, 252, .4) !important;
+    background: linear-gradient(45deg, var(--accent-bright), var(--accent-deep)) !important;
+    box-shadow: 0 8px 32px rgba(124, 92, 252, .45) !important;
+    transform: translateY(-2px) !important;
 }
 
 /* Download button */
@@ -331,6 +385,7 @@ html, body, [class*="css"] {
 [data-testid="stDownloadButton"] button:hover {
     filter: brightness(1.1) !important;
     box-shadow: 0 6px 24px rgba(52, 211, 153, .35) !important;
+    transform: translateY(-2px) !important;
 }
 
 /* ── Expander ────────────────────────────────────────────────────── */
@@ -420,10 +475,14 @@ code {
     background: var(--surface-hover) !important;
 }
 
-/* ── Slider ──────────────────────────────────────────────────────── */
+/* ── Slider — diamond thumb ──────────────────────────────────────── */
 [data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
     background: var(--accent) !important;
     border-color: var(--accent) !important;
+    border-radius: 2px !important;
+    transform: rotate(45deg) !important;
+    width: 14px !important;
+    height: 14px !important;
 }
 
 /* ── Progress bar ────────────────────────────────────────────────── */
@@ -469,29 +528,50 @@ hr {
     font-size: 1.8rem !important;
 }
 
-/* ── Custom classes ──────────────────────────────────────────────── */
-.section-title {
-    font-size: 1.25rem;
-    font-weight: 700;
+/* ── Brutalist section headers ───────────────────────────────────── */
+.section-header-brutal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: .85rem;
+    margin-bottom: 1.25rem;
+}
+
+.section-header-brutal h2 {
+    font-size: 1.35rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
     color: var(--text-primary);
-    margin-bottom: .25rem;
+    margin: 0;
+}
+
+.section-header-brutal .diamonds {
+    font-size: .65rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+    opacity: .6;
+}
+
+/* ── Brutalist labels ────────────────────────────────────────────── */
+.section-label {
+    font-size: .65rem;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: .5rem;
+    opacity: .7;
 }
 
 .section-desc {
-    font-size: .88rem;
+    font-size: .85rem;
+    font-weight: 300;
     color: var(--text-secondary);
     margin-bottom: 1rem;
 }
 
-.section-label {
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: .5rem;
-}
-
+/* ── Custom classes ──────────────────────────────────────────────── */
 .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -506,6 +586,7 @@ hr {
     padding: 1.25rem;
 }
 
+/* ── Stat row — brutalist thin numbers ───────────────────────────── */
 .stat-row {
     display: flex;
     gap: 1rem;
@@ -522,17 +603,23 @@ hr {
 }
 
 .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
     color: var(--accent);
 }
 
 .stat-label {
-    font-size: .75rem;
+    font-size: .65rem;
+    font-weight: 500;
+    letter-spacing: .05em;
+    text-transform: uppercase;
     color: var(--text-secondary);
-    margin-top: .25rem;
+    margin-top: .35rem;
+    opacity: .7;
 }
 
+/* ── Segment cards ───────────────────────────────────────────────── */
 .segment-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -590,6 +677,7 @@ hr {
     font-family: 'JetBrains Mono', monospace;
 }
 
+/* ── Workflow steps ──────────────────────────────────────────────── */
 .workflow-steps {
     display: flex;
     gap: .75rem;
@@ -640,6 +728,7 @@ hr {
     color: var(--success);
 }
 
+/* ── Readiness / file status ─────────────────────────────────────── */
 .file-status {
     display: inline-flex;
     align-items: center;
@@ -662,38 +751,12 @@ hr {
     border: 1px solid rgba(251, 191, 36, .12);
 }
 
-.sidebar-logo {
-    font-size: 1.1rem;
-    font-weight: 800;
-    letter-spacing: -.03em;
-    color: var(--text-primary);
-    margin-bottom: .15rem;
-}
-
-.sidebar-version {
-    font-size: .72rem;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
-}
-
-.sidebar-section {
-    margin-bottom: .75rem;
-}
-
-.sidebar-section-title {
-    font-size: .75rem;
-    font-weight: 700;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: .35rem;
-    margin-top: .75rem;
-}
-
-.upload-counter {
-    font-size: .75rem;
-    color: var(--text-muted);
-    margin-top: .2rem;
+.readiness-bar {
+    display: flex;
+    gap: .75rem;
+    align-items: center;
+    margin: .75rem 0;
+    flex-wrap: wrap;
 }
 
 .mode-desc {
@@ -706,12 +769,77 @@ hr {
     margin: .5rem 0 1rem;
 }
 
-.readiness-bar {
+/* ── Preview placeholder ─────────────────────────────────────────── */
+.preview-placeholder {
     display: flex;
-    gap: .75rem;
+    flex-direction: column;
     align-items: center;
-    margin: .75rem 0;
-    flex-wrap: wrap;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3rem 2rem;
+    margin: 1.5rem 0;
+    position: relative;
+    overflow: hidden;
+    min-height: 300px;
+    background: rgba(0,0,0,.15);
+}
+
+.preview-placeholder .gradient-orb {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(124,92,252,.3) 0%, rgba(124,92,252,0) 70%),
+                radial-gradient(circle, rgba(90,63,214,.2) 0%, rgba(90,63,214,0) 70%);
+    background-position: 30% 30%, 70% 70%;
+    filter: blur(40px);
+    opacity: .5;
+    animation: breathe 8s infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes breathe {
+    0% { transform: scale(1); opacity: .4; }
+    100% { transform: scale(1.15); opacity: .6; }
+}
+
+.preview-placeholder .preview-label {
+    font-size: .6rem;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: .5rem;
+    z-index: 1;
+}
+
+.preview-placeholder .preview-text {
+    font-size: 1.5rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    color: var(--text-secondary);
+    z-index: 1;
+}
+
+/* ── Status bar ──────────────────────────────────────────────────── */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .65rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    margin-top: .75rem;
+    background: var(--surface);
+}
+
+.status-bar .status-item {
+    font-size: .65rem;
+    font-weight: 500;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    opacity: .7;
 }
 
 /* ── Hide default streamlit branding ─────────────────────────────── */
@@ -728,8 +856,60 @@ footer {visibility: hidden;}
     animation: fadeIn .35s ease-out;
 }
 </style>
+<div class="noise-overlay"></div>
 """,
     unsafe_allow_html=True,
+)
+
+# ---------------------------------------------------------------------------
+# JS-based translation of Streamlit built-in UI text
+# ---------------------------------------------------------------------------
+import streamlit.components.v1 as _components
+
+_components.html(
+    """
+<script>
+(function() {
+    var doc = window.parent.document;
+    if (!doc) return;
+    var T = {
+        'Drag and drop file here': '\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043b \u0441\u044e\u0434\u0430',
+        'Drag and drop files here': '\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043b\u044b \u0441\u044e\u0434\u0430',
+        'Browse files': '\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0444\u0430\u0439\u043b\u044b',
+        'Browse directories': '\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u043f\u0430\u043f\u043a\u0438'
+    };
+    var limitRe = /Limit (\\d+)\\s*MB per file/i;
+    var extRe = /\\u00b7\\s*[A-Z0-9, ]+$/;
+    function tr() {
+        doc.querySelectorAll('[data-testid="stFileUploaderDropzoneInstructions"]').forEach(function(el) {
+            var walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+            var n;
+            while (n = walker.nextNode()) {
+                var t = n.textContent.trim();
+                if (T[t]) { n.textContent = T[t]; continue; }
+                if (limitRe.test(n.textContent)) {
+                    n.textContent = n.textContent
+                        .replace(limitRe, '\u041c\u0430\u043a\u0441. $1 \u041c\u0411 \u043d\u0430 \u0444\u0430\u0439\u043b')
+                        .replace(extRe, '');
+                }
+            }
+        });
+        doc.querySelectorAll('[data-testid="stFileUploaderDropzone"] button').forEach(function(btn) {
+            var walker = doc.createTreeWalker(btn, NodeFilter.SHOW_TEXT, null, false);
+            var n;
+            while (n = walker.nextNode()) {
+                var t = n.textContent.trim();
+                if (T[t]) n.textContent = T[t];
+            }
+        });
+    }
+    tr();
+    new MutationObserver(function() { requestAnimationFrame(tr); })
+        .observe(doc.body, {childList: true, subtree: true});
+})();
+</script>
+""",
+    height=0,
 )
 
 # ---------------------------------------------------------------------------
@@ -763,14 +943,21 @@ def save_uploads(files, target_dir: Path) -> list[Path]:
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.markdown(
-        '<div class="sidebar-logo">UGCKit</div>'
-        '<div class="sidebar-version">Сборщик видео v1.0</div>',
+        '<div class="sidebar-logo">UGC<span class="dot">&middot;</span>KIT</div>'
+        '<div class="sidebar-version">V.01</div>',
         unsafe_allow_html=True,
     )
 
-    # 1. Scripts
+    # .01 Script
     st.markdown(
-        '<div class="sidebar-section-title">1. Скрипты (.md)</div>',
+        '<div class="upload-block">'
+        '<div class="upload-block-header">'
+        '<span class="upload-block-title"><span class="num-index">.01</span>Скрипт</span>'
+        '<span class="upload-block-status required">ОБЯЗАТЕЛЬНО</span>'
+        "</div>"
+        '<div class="upload-block-meta">Markdown (.md)</div>'
+        '<div class="upload-block-hint">Загрузите сценарий с таймкодами и озвучкой.</div>'
+        "</div>",
         unsafe_allow_html=True,
     )
     script_files = st.file_uploader(
@@ -786,15 +973,27 @@ with st.sidebar:
     )
     if script_files:
         save_uploads(script_files, SCRIPTS_DIR)
-        names = ", ".join(f.name for f in script_files)
+        total_size = sum(f.size for f in script_files)
+        size_str = (
+            f"{total_size / 1024:.1f} КБ"
+            if total_size < 1024 * 1024
+            else f"{total_size / 1024 / 1024:.1f} МБ"
+        )
         st.markdown(
-            f'<div class="upload-counter">Загружено: {len(script_files)} ({names})</div>',
+            f'<div class="upload-counter">{len(script_files)} файл(ов) &middot; {size_str}</div>',
             unsafe_allow_html=True,
         )
 
-    # 2. Avatars
+    # .02 Avatar
     st.markdown(
-        '<div class="sidebar-section-title">2. Аватары (.mp4)</div>',
+        '<div class="upload-block">'
+        '<div class="upload-block-header">'
+        '<span class="upload-block-title"><span class="num-index">.02</span>Аватар</span>'
+        '<span class="upload-block-status required">ОБЯЗАТЕЛЬНО</span>'
+        "</div>"
+        '<div class="upload-block-meta">Видео (.mp4)</div>'
+        '<div class="upload-block-hint">Видео с AI-аватаром, по одному на клип.</div>'
+        "</div>",
         unsafe_allow_html=True,
     )
     avatar_files = st.file_uploader(
@@ -810,15 +1009,27 @@ with st.sidebar:
     )
     if avatar_files:
         save_uploads(avatar_files, AVATARS_DIR)
-        names = ", ".join(f.name for f in avatar_files)
+        total_size = sum(f.size for f in avatar_files)
+        size_str = (
+            f"{total_size / 1024:.1f} КБ"
+            if total_size < 1024 * 1024
+            else f"{total_size / 1024 / 1024:.1f} МБ"
+        )
         st.markdown(
-            f'<div class="upload-counter">Загружено: {len(avatar_files)} ({names})</div>',
+            f'<div class="upload-counter">{len(avatar_files)} файл(ов) &middot; {size_str}</div>',
             unsafe_allow_html=True,
         )
 
-    # 3. Screencasts
+    # .03 Screencast
     st.markdown(
-        '<div class="sidebar-section-title">3. Скринкасты (.mp4)</div>',
+        '<div class="upload-block">'
+        '<div class="upload-block-header">'
+        '<span class="upload-block-title"><span class="num-index">.03</span>Скринкаст</span>'
+        '<span class="upload-block-status optional">ОПЦИОНАЛЬНО</span>'
+        "</div>"
+        '<div class="upload-block-meta">Видео (.mp4)</div>'
+        '<div class="upload-block-hint">Запись экрана для наложения на видео.</div>'
+        "</div>",
         unsafe_allow_html=True,
     )
     screencast_files = st.file_uploader(
@@ -834,15 +1045,27 @@ with st.sidebar:
     )
     if screencast_files:
         save_uploads(screencast_files, SCREENCASTS_DIR)
-        names = ", ".join(f.name for f in screencast_files)
+        total_size = sum(f.size for f in screencast_files)
+        size_str = (
+            f"{total_size / 1024:.1f} КБ"
+            if total_size < 1024 * 1024
+            else f"{total_size / 1024 / 1024:.1f} МБ"
+        )
         st.markdown(
-            f'<div class="upload-counter">Загружено: {len(screencast_files)} ({names})</div>',
+            f'<div class="upload-counter">{len(screencast_files)} файл(ов) &middot; {size_str}</div>',
             unsafe_allow_html=True,
         )
 
-    # 4. Music
+    # .04 Music
     st.markdown(
-        '<div class="sidebar-section-title">4. Музыка (необяз.)</div>',
+        '<div class="upload-block">'
+        '<div class="upload-block-header">'
+        '<span class="upload-block-title"><span class="num-index">.04</span>Музыка</span>'
+        '<span class="upload-block-status optional">ОПЦИОНАЛЬНО</span>'
+        "</div>"
+        '<div class="upload-block-meta">Аудио (.mp3, .wav, .m4a, .ogg)</div>'
+        '<div class="upload-block-hint">Фоновый трек, зацикленный на длину видео.</div>'
+        "</div>",
         unsafe_allow_html=True,
     )
     music_file_upload = st.file_uploader(
@@ -856,8 +1079,13 @@ with st.sidebar:
         label_visibility="collapsed",
     )
     if music_file_upload:
+        size_str = (
+            f"{music_file_upload.size / 1024:.1f} КБ"
+            if music_file_upload.size < 1024 * 1024
+            else f"{music_file_upload.size / 1024 / 1024:.1f} МБ"
+        )
         st.markdown(
-            f'<div class="upload-counter">Загружено: {music_file_upload.name}</div>',
+            f'<div class="upload-counter">{music_file_upload.name} &middot; {size_str}</div>',
             unsafe_allow_html=True,
         )
 
@@ -892,7 +1120,10 @@ tab_scripts, tab_settings, tab_compose = st.tabs(["Скрипты", "Настр�
 # ---------------------------------------------------------------------------
 with tab_settings:
     st.markdown(
-        '<div class="section-title">Настройки</div>'
+        '<div class="section-header-brutal">'
+        "<h2>Настройки</h2>"
+        '<span class="diamonds">&#9670;&#9670;&#9670;</span>'
+        "</div>"
         '<div class="section-desc">Качество видео, звук, субтитры и синхронизация.</div>',
         unsafe_allow_html=True,
     )
@@ -1074,7 +1305,10 @@ with tab_settings:
 # ---------------------------------------------------------------------------
 with tab_scripts:
     st.markdown(
-        '<div class="section-title">Скрипты</div>'
+        '<div class="section-header-brutal">'
+        "<h2>Скрипты</h2>"
+        '<span class="diamonds">&#9670;&#9670;&#9670;</span>'
+        "</div>"
         '<div class="section-desc">'
         "Автоматическая сборка коротких видео для TikTok и Reels: аватар + скринкаст + субтитры."
         "</div>",
@@ -1153,8 +1387,30 @@ with tab_scripts:
 # Compose tab
 # ---------------------------------------------------------------------------
 with tab_compose:
+    st.markdown(
+        '<div class="section-header-brutal">'
+        "<h2>Сборка</h2>"
+        '<span class="diamonds">&#9670;&#9670;&#9670;</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
     if not all_scripts:
-        st.warning("Сначала загрузите скрипты через боковую панель (раздел «1. Скрипты»).")
+        st.markdown(
+            '<div class="preview-placeholder">'
+            '<div class="gradient-orb"></div>'
+            '<div class="preview-label">ПРЕВЬЮ</div>'
+            '<div class="preview-text">Ожидание файлов</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="status-bar">'
+            '<div class="status-item">Прим. рендер: ~45с</div>'
+            '<div class="status-item">Очередь: пусто</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
     else:
         # --- Script selector ---
         script_options = {f"{s.script_id}: {s.title}": s for s in all_scripts}
@@ -1305,8 +1561,8 @@ with tab_compose:
 
         st.markdown(
             f'<div class="workflow-steps">'
-            f'<div class="{_step_cls(step1_done)}"><div class="workflow-num">{"✓" if step1_done else "1"}</div>Скрипт загружен</div>'
-            f'<div class="{_step_cls(step2_done)}"><div class="workflow-num">{"✓" if step2_done else "2"}</div>Аватары ({avs_count}/{segs_count})</div>'
+            f'<div class="{_step_cls(step1_done)}"><div class="workflow-num">{"&#9670;" if step1_done else "1"}</div>Скрипт загружен</div>'
+            f'<div class="{_step_cls(step2_done)}"><div class="workflow-num">{"&#9670;" if step2_done else "2"}</div>Аватары ({avs_count}/{segs_count})</div>'
             f'<div class="{_step_cls(False, step3_active)}"><div class="workflow-num">3</div>Проверить таймлайн</div>'
             f'<div class="{_step_cls(False)}"><div class="workflow-num">4</div>Собрать видео</div>'
             "</div>",
@@ -1317,18 +1573,20 @@ with tab_compose:
         readiness_items = []
         if step1_done:
             readiness_items.append(
-                f'<div class="file-status file-status-ok">✓ {len(all_scripts)} скриптов</div>'
+                f'<div class="file-status file-status-ok">&#9670; {len(all_scripts)} скриптов</div>'
             )
         else:
-            readiness_items.append('<div class="file-status file-status-warn">⚠ Нет скриптов</div>')
+            readiness_items.append(
+                '<div class="file-status file-status-warn">&#9671; Нет скриптов</div>'
+            )
 
         if step2_done:
             readiness_items.append(
-                f'<div class="file-status file-status-ok">✓ {avs_count} аватаров</div>'
+                f'<div class="file-status file-status-ok">&#9670; {avs_count} аватаров</div>'
             )
         else:
             readiness_items.append(
-                f'<div class="file-status file-status-warn">⚠ {avs_count}/{segs_count} аватаров</div>'
+                f'<div class="file-status file-status-warn">&#9671; {avs_count}/{segs_count} аватаров</div>'
             )
 
         sc_needed = any(sc for seg in selected_script.segments for sc in seg.screencasts)
@@ -1336,11 +1594,11 @@ with tab_compose:
         if sc_needed:
             if sc_available > 0:
                 readiness_items.append(
-                    f'<div class="file-status file-status-ok">✓ {sc_available} скринкастов</div>'
+                    f'<div class="file-status file-status-ok">&#9670; {sc_available} скринкастов</div>'
                 )
             else:
                 readiness_items.append(
-                    '<div class="file-status file-status-warn">⚠ Нужны скринкасты</div>'
+                    '<div class="file-status file-status-warn">&#9671; Нужны скринкасты</div>'
                 )
 
         st.markdown(
@@ -1492,6 +1750,26 @@ with tab_compose:
                     mime="video/mp4",
                     use_container_width=True,
                 )
+        elif not can_compose:
+            # Preview placeholder when files are loaded but not ready
+            st.markdown(
+                '<div class="preview-placeholder">'
+                '<div class="gradient-orb"></div>'
+                '<div class="preview-label">ПРЕВЬЮ</div>'
+                '<div class="preview-text">Ожидание файлов</div>'
+                "</div>",
+                unsafe_allow_html=True,
+            )
+
+        # Status bar
+        est_render = f"~{int(selected_script.total_duration * 1.5)}с" if selected_script else "~45с"
+        st.markdown(
+            f'<div class="status-bar">'
+            f'<div class="status-item">Прим. рендер: {est_render}</div>'
+            f'<div class="status-item">Очередь: пусто</div>'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
         # --- Batch compose ---
         st.markdown("---")
