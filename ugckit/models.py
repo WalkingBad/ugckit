@@ -40,9 +40,7 @@ class Segment(BaseModel):
     id: int
     text: str
     duration: float  # Expected duration in seconds
-    avatar_clip: Optional[Path] = None  # Path to avatar video file
     screencasts: List[ScreencastOverlay] = Field(default_factory=list)
-    composition_mode: CompositionMode = CompositionMode.OVERLAY
 
 
 class Script(BaseModel):
@@ -94,7 +92,6 @@ class OutputConfig(BaseModel):
     """Output video configuration."""
 
     fps: int = 30
-    bitrate: str = "8M"
     resolution: Tuple[int, int] = (1080, 1920)
     codec: str = "libx264"
     preset: str = "medium"

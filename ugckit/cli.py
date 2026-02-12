@@ -10,12 +10,11 @@ import click
 
 from ugckit.composer import FFmpegError, build_timeline, compose_video, format_timeline
 from ugckit.config import load_config
-from ugckit.models import CompositionMode, Position
 from ugckit.parser import load_script, parse_scripts_directory
 
 
 @click.group()
-@click.version_option()
+@click.version_option(version="0.1.0")
 def main():
     """UGCKit - AI UGC Video Assembly Tool.
 
@@ -109,8 +108,6 @@ def compose(
             err=True,
         )
         mode = "overlay"
-    if mode == "pip":
-        cfg.composition.pip.head_position = Position(head_position)
 
     # Determine screencasts directory
     if screencasts:
@@ -202,7 +199,9 @@ def list_scripts(scripts_dir: Path):
     for script in scripts:
         segments = len(script.segments)
         duration = script.total_duration
-        click.echo(f"  {script.script_id:15} | {script.title[:40]:40} | {segments} segments | ~{duration:.0f}s")
+        click.echo(
+            f"  {script.script_id:15} | {script.title[:40]:40} | {segments} segments | ~{duration:.0f}s"
+        )
 
 
 @main.command()
@@ -227,7 +226,7 @@ def show_script(script: str, scripts_dir: Optional[Path]):
         parsed_script = load_script(script, scripts_dir)
     except (FileNotFoundError, ValueError) as e:
         click.echo(f"Error: {e}", err=True)
-        return
+        sys.exit(1)
 
     click.echo(f"Script: {parsed_script.script_id}")
     click.echo(f"Title: {parsed_script.title}")
@@ -238,7 +237,8 @@ def show_script(script: str, scripts_dir: Optional[Path]):
     click.echo("Segments:")
 
     for seg in parsed_script.segments:
-        click.echo(f"  [{seg.id}] ({seg.duration:.1f}s) {seg.text[:60]}...")
+        suffix = "..." if len(seg.text) > 60 else ""
+        click.echo(f"  [{seg.id}] ({seg.duration:.1f}s) {seg.text[:60]}{suffix}")
         for sc in seg.screencasts:
             click.echo(f"       └─ screencast: {sc.file} @ {sc.start}s-{sc.end}s")
 

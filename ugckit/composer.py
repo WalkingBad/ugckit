@@ -5,12 +5,14 @@ Handles video assembly using FFmpeg filter_complex.
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+import click
+
 from ugckit.models import (
-    CompositionMode,
     Config,
     Position,
     Script,
@@ -50,7 +52,10 @@ def get_video_duration(video_path: Path) -> float:
         "default=noprint_wrappers=1:nokey=1",
         str(video_path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        raise FFmpegError(f"ffprobe timed out for {video_path}")
 
     if result.returncode != 0:
         raise FFmpegError(f"ffprobe failed for {video_path}: {result.stderr}")
@@ -88,7 +93,10 @@ def has_audio_stream(video_path: Path) -> bool:
         "csv=p=0",
         str(video_path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        raise FFmpegError(f"ffprobe timed out for {video_path}")
 
     if result.returncode != 0:
         raise FFmpegError(f"ffprobe failed for {video_path}: {result.stderr}")
@@ -147,14 +155,20 @@ def build_timeline(
         for sc in segment.screencasts:
             sc_path = screencasts_dir / sc.file
             if sc_path.exists():
+                sc_end = min(current_time + sc.end, current_time + duration)
                 entries.append(
                     TimelineEntry(
                         start=current_time + sc.start,
-                        end=current_time + sc.end,
+                        end=sc_end,
                         type="screencast",
                         file=sc_path,
                         parent_segment=segment.id,
                     )
+                )
+            else:
+                click.echo(
+                    f"Warning: screencast not found: {sc_path}",
+                    err=True,
                 )
 
         current_time += duration
@@ -269,7 +283,7 @@ def build_ffmpeg_filter_overlay(
     for i, has_audio in enumerate(audio_presence):
         label = f"a{i}"
         if has_audio:
-            filters.append(f"[{i}:a]asetpts=PTS-STARTPTS[{label}]")
+            filters.append(f"[{i}:a]aresample=48000,asetpts=PTS-STARTPTS[{label}]")
         else:
             duration = avatar_entries[i].end - avatar_entries[i].start
             filters.append(
@@ -279,15 +293,11 @@ def build_ffmpeg_filter_overlay(
         audio_labels.append(f"[{label}]")
 
     if len(audio_labels) > 1:
-        filters.append(
-            f"{''.join(audio_labels)}concat=n={len(audio_labels)}:v=0:a=1[audio]"
-        )
+        filters.append(f"{''.join(audio_labels)}concat=n={len(audio_labels)}:v=0:a=1[audio]")
     elif len(audio_labels) == 1:
         filters.append(f"{audio_labels[0]}anull[audio]")
     else:
-        filters.append(
-            f"anullsrc=r=48000:cl=stereo,atrim=0:{timeline.total_duration:.2f}[audio]"
-        )
+        filters.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{timeline.total_duration:.2f}[audio]")
 
     # Apply screencast overlays
     current_base = "base"
@@ -305,15 +315,13 @@ def build_ffmpeg_filter_overlay(
         x, y = position_to_overlay_coords(
             overlay_cfg.position,
             overlay_cfg.margin,
-            f"w",
-            f"h",
+            "w",
+            "h",
         )
 
         # Overlay with timing
         enable = f"between(t,{sc_entry.start:.2f},{sc_entry.end:.2f})"
-        filters.append(
-            f"[{current_base}][sc{i}]overlay=x={x}:y={y}:enable='{enable}'[{next_base}]"
-        )
+        filters.append(f"[{current_base}][sc{i}]overlay=x={x}:y={y}:enable='{enable}'[{next_base}]")
         current_base = next_base
 
     # Final output
@@ -324,9 +332,7 @@ def build_ffmpeg_filter_overlay(
 
     # Audio normalization
     if config.audio.normalize:
-        filters.append(
-            f"[audio]loudnorm=I={config.audio.target_loudness}:TP=-1.5:LRA=11[aout]"
-        )
+        filters.append(f"[audio]loudnorm=I={config.audio.target_loudness}:TP=-1.5:LRA=11[aout]")
     else:
         filters.append("[audio]anull[aout]")
 
@@ -409,13 +415,17 @@ def compose_video(
         output_cfg.preset,
         "-crf",
         str(output_cfg.crf),
+        "-pix_fmt",
+        "yuv420p",
         "-r",
         str(output_cfg.fps),
         "-c:a",
         config.audio.codec,
         "-b:a",
         config.audio.bitrate,
-        "-y",  # Overwrite output
+        "-movflags",
+        "+faststart",
+        "-y",
         str(timeline.output_path),
     ]
 
@@ -423,15 +433,18 @@ def compose_video(
     cmd = ["ffmpeg"] + inputs + ["-filter_complex", filter_complex] + output_args
 
     if dry_run:
-        print("FFmpeg command:")
-        print(" ".join(cmd))
+        click.echo("FFmpeg command:")
+        click.echo(shlex.join(cmd))
         return None
 
     # Ensure output directory exists
     timeline.output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Run FFmpeg
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Run FFmpeg (5 min timeout for rendering)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired:
+        raise FFmpegError("FFmpeg rendering timed out (5 min limit)")
     if result.returncode != 0:
         raise FFmpegError(f"FFmpeg failed: {result.stderr}")
 

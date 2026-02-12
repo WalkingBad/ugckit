@@ -9,10 +9,12 @@ import re
 from pathlib import Path
 from typing import List, Optional
 
-from ugckit.models import CompositionMode, Script, ScreencastOverlay, Segment
+from ugckit.models import CompositionMode, ScreencastOverlay, Script, Segment
 
 # Regex patterns for parsing
-SCRIPT_HEADER_PATTERN = re.compile(r"###\s+Script\s+(\w+):\s+[\"']?(.+?)[\"']?\s*(?:\(|$)")
+SCRIPT_HEADER_PATTERN = re.compile(
+    r"###\s+Script\s+(\w+):\s+[\"']?(.+?)[\"']?\s*(?:\(|$)", re.MULTILINE
+)
 CLIP_PATTERN = re.compile(r"\*\*Clip\s+(\d+)\s*\(.*?\):\*\*")
 # Match double-quoted text (allows apostrophes inside)
 SAYS_PATTERN = re.compile(r'Says:\s*"([^"]+)"', re.DOTALL)
@@ -39,36 +41,44 @@ def estimate_duration(text: str) -> float:
     return words / WORDS_PER_SECOND
 
 
-def parse_screencast_tag(text: str) -> Optional[ScreencastOverlay]:
-    """Parse screencast tag from text.
+def parse_screencast_tags(text: str) -> List[ScreencastOverlay]:
+    """Parse all screencast tags from text.
 
     Format: [screencast: filename @ start-end mode:pip]
 
     Args:
-        text: Text containing screencast tag.
+        text: Text containing screencast tags.
 
     Returns:
-        ScreencastOverlay if found, None otherwise.
+        List of ScreencastOverlay objects found.
     """
-    match = SCREENCAST_PATTERN.search(text)
-    if not match:
-        return None
+    results = []
+    for match in SCREENCAST_PATTERN.finditer(text):
+        filename = match.group(1)
+        start = float(match.group(2))
+        end = float(match.group(3))
+        mode_str = match.group(4)
 
-    filename = match.group(1)
-    start = float(match.group(2))
-    end = float(match.group(3))
-    mode_str = match.group(4)
+        if end <= start:
+            continue
 
-    mode = CompositionMode.OVERLAY
-    if mode_str and mode_str.lower() == "pip":
-        mode = CompositionMode.PIP
+        mode = CompositionMode.OVERLAY
+        if mode_str and mode_str.lower() == "pip":
+            mode = CompositionMode.PIP
 
-    return ScreencastOverlay(
-        file=f"{filename}.mp4",
-        start=start,
-        end=end,
-        mode=mode,
-    )
+        # Only append .mp4 if no extension present
+        if "." not in filename:
+            filename = f"{filename}.mp4"
+
+        results.append(
+            ScreencastOverlay(
+                file=filename,
+                start=start,
+                end=end,
+                mode=mode,
+            )
+        )
+    return results
 
 
 def parse_script_section(content: str, script_id: str, title: str) -> Script:
@@ -111,10 +121,7 @@ def parse_script_section(content: str, script_id: str, title: str) -> Script:
         duration = estimate_duration(text)
 
         # Check for screencast tags
-        screencasts = []
-        screencast = parse_screencast_tag(clip_content)
-        if screencast:
-            screencasts.append(screencast)
+        screencasts = parse_screencast_tags(clip_content)
 
         segment = Segment(
             id=clip_num,
@@ -156,7 +163,7 @@ def parse_markdown_file(file_path: Path) -> List[Script]:
 
     for i, match in enumerate(script_matches):
         script_id = match.group(1)
-        title = match.group(2).strip('"\'')
+        title = match.group(2).strip("\"'")
 
         # Get content until next script or end of file
         start = match.end()
@@ -238,8 +245,6 @@ def load_script(script_ref: str, scripts_dir: Optional[Path] = None) -> Script:
 
     if not found:
         available = [s.script_id for s in scripts]
-        raise FileNotFoundError(
-            f"Script '{script_ref}' not found. Available: {available}"
-        )
+        raise FileNotFoundError(f"Script '{script_ref}' not found. Available: {available}")
 
     return found
