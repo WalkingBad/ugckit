@@ -309,3 +309,95 @@ class TestComposeVideoWithProgress:
         assert output.exists()
         assert len(progress_values) > 0
         assert progress_values[-1] == 1.0  # should end at 1.0
+
+
+# ── PiP filter builder tests ──────────────────────────────────────────
+
+
+class TestBuildFfmpegFilterPip:
+    def _make_pip_timeline(self, tmp_path) -> Timeline:
+        """Create a timeline with PiP screencast entries."""
+        from ugckit.models import CompositionMode
+
+        entries = [
+            TimelineEntry(start=0, end=8, type="avatar", file=tmp_path / "a.mp4", parent_segment=1),
+            TimelineEntry(
+                start=2,
+                end=6,
+                type="screencast",
+                file=tmp_path / "sc.mp4",
+                parent_segment=1,
+                composition_mode=CompositionMode.PIP,
+            ),
+        ]
+        return Timeline(
+            script_id="P1",
+            total_duration=8.0,
+            entries=entries,
+            output_path=tmp_path / "out.mp4",
+        )
+
+    def test_pip_filter_has_fullscreen_overlay(self, tmp_path):
+        from ugckit.composer import build_ffmpeg_filter_pip
+
+        tl = self._make_pip_timeline(tmp_path)
+        cfg = Config()
+        result = build_ffmpeg_filter_pip(tl, cfg, audio_presence=[True])
+        # PiP mode should scale screencast to fullscreen
+        assert "1080:1920" in result  # fullscreen scale
+        assert "[vout]" in result
+        assert "[aout]" in result
+
+    def test_pip_filter_with_head_videos(self, tmp_path):
+        from ugckit.composer import build_ffmpeg_filter_pip
+
+        tl = self._make_pip_timeline(tmp_path)
+        cfg = Config()
+        head_vids = [tmp_path / "head_0.webm"]
+        result = build_ffmpeg_filter_pip(tl, cfg, audio_presence=[True], head_videos=head_vids)
+        # Should include head overlay
+        assert "overlay" in result.lower()
+
+    def test_pip_audio_presence_mismatch(self, tmp_path):
+        from ugckit.composer import build_ffmpeg_filter_pip
+
+        tl = self._make_pip_timeline(tmp_path)
+        cfg = Config()
+        with pytest.raises(ValueError, match="audio_presence length"):
+            build_ffmpeg_filter_pip(tl, cfg, audio_presence=[True, True])
+
+
+class TestBuildTimelinePreservesMode:
+    def test_screencast_mode_propagated(self, tmp_path):
+        """build_timeline should copy screencast mode to TimelineEntry."""
+        from ugckit.models import CompositionMode, ScreencastOverlay
+
+        v1 = make_fake_video(tmp_path / "seg1.mp4", duration=3.0)
+        sc_dir = tmp_path / "screencasts"
+        sc_dir.mkdir()
+        (sc_dir / "app.mp4").touch()
+
+        script = Script(
+            script_id="T1",
+            title="Test",
+            total_duration=8.0,
+            segments=[
+                Segment(
+                    id=1,
+                    text="Test",
+                    duration=8.0,
+                    screencasts=[
+                        ScreencastOverlay(
+                            file="app.mp4",
+                            start=1.0,
+                            end=3.0,
+                            mode=CompositionMode.PIP,
+                        )
+                    ],
+                )
+            ],
+        )
+        tl = build_timeline(script, [v1], sc_dir, tmp_path / "out.mp4")
+        sc_entries = [e for e in tl.entries if e.type == "screencast"]
+        assert len(sc_entries) == 1
+        assert sc_entries[0].composition_mode == CompositionMode.PIP

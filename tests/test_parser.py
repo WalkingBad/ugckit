@@ -233,3 +233,48 @@ class TestParseScriptsDirectory:
         empty = tmp_dir / "empty"
         empty.mkdir()
         assert parse_scripts_directory(empty) == []
+
+
+# ── Keyword screencast syntax (Phase 3) ─────────────────────────────────
+
+
+class TestKeywordScreencastParsing:
+    def test_keyword_syntax(self):
+        text = '[screencast: app @ word:"check this out"-word:"and done" mode:pip]'
+        result = parse_screencast_tags(text)
+        assert len(result) == 1
+        assert result[0].file == "app.mp4"
+        assert result[0].start_keyword == "check this out"
+        assert result[0].end_keyword == "and done"
+        assert result[0].start == 0.0  # placeholder
+        assert result[0].end == 0.0  # placeholder
+
+    def test_keyword_overlay_mode(self):
+        text = '[screencast: demo @ word:"look here"-word:"got it" mode:overlay]'
+        result = parse_screencast_tags(text)
+        assert len(result) == 1
+        assert result[0].mode.value == "overlay"
+        assert result[0].start_keyword == "look here"
+
+    def test_keyword_no_mode(self):
+        text = '[screencast: demo @ word:"start"-word:"end"]'
+        result = parse_screencast_tags(text)
+        assert len(result) == 1
+        assert result[0].mode.value == "overlay"  # default
+
+    def test_mixed_numeric_and_keyword(self):
+        text = "[screencast: a @ 1.5-5.0]\n" '[screencast: b @ word:"check"-word:"done" mode:pip]'
+        result = parse_screencast_tags(text)
+        assert len(result) == 2
+        # First is numeric
+        assert result[0].start == 0.0  # keyword comes first in results
+        assert result[0].start_keyword == "check"
+        # Second is numeric
+        assert result[1].start == 1.5
+        assert result[1].start_keyword is None
+
+    def test_keyword_with_extension(self):
+        text = '[screencast: app.mp4 @ word:"a"-word:"b"]'
+        result = parse_screencast_tags(text)
+        assert len(result) == 1
+        assert result[0].file == "app.mp4"

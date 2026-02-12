@@ -32,6 +32,8 @@ class ScreencastOverlay(BaseModel):
     start: float  # Start time in seconds
     end: float  # End time in seconds
     mode: CompositionMode = CompositionMode.OVERLAY
+    start_keyword: Optional[str] = None  # Keyword trigger for start (Phase 3)
+    end_keyword: Optional[str] = None  # Keyword trigger for end (Phase 3)
 
 
 class Segment(BaseModel):
@@ -61,6 +63,7 @@ class TimelineEntry(BaseModel):
     type: Literal["avatar", "screencast"]
     file: Path
     parent_segment: Optional[int] = None  # For screencasts, which segment they belong to
+    composition_mode: CompositionMode = CompositionMode.OVERLAY
 
 
 class Timeline(BaseModel):

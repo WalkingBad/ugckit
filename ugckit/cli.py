@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -16,7 +17,47 @@ from ugckit.composer import (
     format_timeline,
 )
 from ugckit.config import load_config
+from ugckit.models import CompositionMode, Position
 from ugckit.parser import load_script, parse_scripts_directory
+
+
+def _prepare_pip(
+    avatar_list: list[Path],
+    config,
+    head_position: str,
+    head_scale: float,
+) -> list[Path]:
+    """Pre-process avatar clips for PiP mode: generate head videos."""
+    from ugckit.pip_processor import PipProcessingError, create_head_video
+
+    config.composition.pip.head_position = Position(head_position)
+    config.composition.pip.head_scale = head_scale
+
+    head_videos = []
+    tmp_dir = Path(tempfile.mkdtemp(prefix="ugckit_pip_"))
+
+    for i, avatar in enumerate(avatar_list):
+        head_out = tmp_dir / f"head_{i}.webm"
+        try:
+            head_path = create_head_video(avatar, head_out, config.composition.pip)
+            head_videos.append(head_path)
+            click.echo(f"  Head video {i+1}/{len(avatar_list)}: {head_path.name}")
+        except PipProcessingError as e:
+            click.echo(f"  Warning: head extraction failed for {avatar.name}: {e}", err=True)
+            return []
+
+    return head_videos
+
+
+def _apply_sync(parsed_script, avatar_list: list[Path], model_name: str):
+    """Apply Smart Sync (Whisper) to resolve keyword-based screencast timing."""
+    from ugckit.sync import SyncError, sync_screencast_timing
+
+    try:
+        return sync_screencast_timing(parsed_script, avatar_list, model_name)
+    except SyncError as e:
+        click.echo(f"Warning: Smart Sync failed: {e}", err=True)
+        return parsed_script
 
 
 @click.group()
@@ -86,6 +127,23 @@ def main():
     help="Head position for PiP mode",
 )
 @click.option(
+    "--head-scale",
+    type=float,
+    default=0.25,
+    help="Head size as fraction of output width (0.1-0.5)",
+)
+@click.option(
+    "--sync",
+    is_flag=True,
+    help="Enable Smart Sync (Whisper) for keyword-based screencast timing",
+)
+@click.option(
+    "--sync-model",
+    type=click.Choice(["tiny", "base", "small", "medium", "large"]),
+    default="base",
+    help="Whisper model size for Smart Sync",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Show timeline and FFmpeg command without rendering",
@@ -100,6 +158,9 @@ def compose(
     config: Optional[Path],
     mode: str,
     head_position: str,
+    head_scale: float,
+    sync: bool,
+    sync_model: str,
     dry_run: bool,
 ):
     """Compose a video from script and avatar clips.
@@ -108,7 +169,7 @@ def compose(
 
     Example:
         ugckit compose --script A1 --avatars seg1.mp4 --avatars seg2.mp4
-        ugckit compose --script A1 --avatar-dir ./avatars/
+        ugckit compose --script A1 --avatar-dir ./avatars/ --mode pip
     """
     if not avatars and not avatar_dir:
         click.echo("Error: provide --avatars or --avatar-dir", err=True)
@@ -116,14 +177,6 @@ def compose(
 
     # Load configuration
     cfg = load_config(config)
-
-    # Override config with CLI options
-    if mode == "pip":
-        click.echo(
-            "Warning: PiP mode is not yet implemented (Phase 2). Using overlay mode.",
-            err=True,
-        )
-        mode = "overlay"
 
     # Determine screencasts directory
     screencasts_dir = screencasts or cfg.screencasts_path
@@ -150,6 +203,17 @@ def compose(
             err=True,
         )
 
+    # Smart Sync: resolve keyword-based screencast timing
+    if sync:
+        click.echo("Running Smart Sync (Whisper)...")
+        parsed_script = _apply_sync(parsed_script, avatar_list, sync_model)
+
+    # PiP mode: override screencast modes if --mode pip
+    if mode == "pip":
+        for seg in parsed_script.segments:
+            for sc in seg.screencasts:
+                sc.mode = CompositionMode.PIP
+
     # Determine output path
     if output:
         if output.is_dir():
@@ -171,6 +235,14 @@ def compose(
         click.echo(f"Error building timeline: {e}", err=True)
         sys.exit(1)
 
+    # Pre-process head videos for PiP mode
+    head_videos = None
+    if mode == "pip":
+        click.echo("Generating head videos for PiP mode...")
+        head_videos = _prepare_pip(avatar_list, cfg, head_position, head_scale)
+        if not head_videos:
+            click.echo("Warning: PiP head extraction failed, using overlay mode", err=True)
+
     # Display timeline
     click.echo(format_timeline(timeline))
     click.echo()
@@ -178,7 +250,7 @@ def compose(
     if dry_run:
         click.echo("Dry run - no video will be rendered")
         click.echo()
-        cmd = compose_video(timeline, cfg, dry_run=True)
+        cmd = compose_video(timeline, cfg, dry_run=True, head_videos=head_videos)
         click.echo("FFmpeg command:")
         click.echo(format_ffmpeg_cmd(cmd))
         return
@@ -186,7 +258,7 @@ def compose(
     # Compose video
     click.echo("Composing video...")
     try:
-        result_path = compose_video(timeline, cfg, dry_run=False)
+        result_path = compose_video(timeline, cfg, dry_run=False, head_videos=head_videos)
         click.echo(f"Done! Output: {result_path}")
     except (ValueError, FFmpegError) as e:
         click.echo(f"Error composing video: {e}", err=True)
@@ -260,7 +332,13 @@ def show_script(script: str, scripts_dir: Optional[Path]):
         suffix = "..." if len(seg.text) > 60 else ""
         click.echo(f"  [{seg.id}] ({seg.duration:.1f}s) {seg.text[:60]}{suffix}")
         for sc in seg.screencasts:
-            click.echo(f"       └─ screencast: {sc.file} @ {sc.start}s-{sc.end}s")
+            mode_str = f" [{sc.mode.value}]" if sc.mode != CompositionMode.OVERLAY else ""
+            if sc.start_keyword:
+                click.echo(
+                    f'       └─ screencast: {sc.file} @ word:"{sc.start_keyword}"-word:"{sc.end_keyword}"{mode_str}'
+                )
+            else:
+                click.echo(f"       └─ screencast: {sc.file} @ {sc.start}s-{sc.end}s{mode_str}")
 
 
 @main.command()

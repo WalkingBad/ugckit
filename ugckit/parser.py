@@ -22,6 +22,11 @@ SCREENCAST_PATTERN = re.compile(
     r"\[screencast:\s*([\w\-\.]+)\s*@\s*([\d.]+)s?-([\d.]+)s?\s*(?:mode:(\w+))?\]",
     re.IGNORECASE,
 )
+# Keyword-based screencast: [screencast: file @ word:"phrase1"-word:"phrase2" mode:pip]
+SCREENCAST_KEYWORD_PATTERN = re.compile(
+    r'\[screencast:\s*([\w\-\.]+)\s*@\s*word:"([^"]+)"\s*-\s*word:"([^"]+)"\s*(?:mode:(\w+))?\]',
+    re.IGNORECASE,
+)
 CHARACTER_PATTERN = re.compile(r"\*\*(?:Persona|Character):\*\*\s*(.+)")
 
 # Words per second for duration estimation
@@ -44,7 +49,9 @@ def estimate_duration(text: str) -> float:
 def parse_screencast_tags(text: str) -> List[ScreencastOverlay]:
     """Parse all screencast tags from text.
 
-    Format: [screencast: filename @ start-end mode:pip]
+    Supports two formats:
+    - Numeric: [screencast: filename @ start-end mode:pip]
+    - Keyword: [screencast: filename @ word:"start phrase"-word:"end phrase" mode:pip]
 
     Args:
         text: Text containing screencast tags.
@@ -53,7 +60,40 @@ def parse_screencast_tags(text: str) -> List[ScreencastOverlay]:
         List of ScreencastOverlay objects found.
     """
     results = []
+
+    # Parse keyword-based screencasts first (Phase 3)
+    keyword_spans = set()
+    for match in SCREENCAST_KEYWORD_PATTERN.finditer(text):
+        keyword_spans.add((match.start(), match.end()))
+        filename = match.group(1)
+        start_keyword = match.group(2)
+        end_keyword = match.group(3)
+        mode_str = match.group(4)
+
+        mode = CompositionMode.OVERLAY
+        if mode_str and mode_str.lower() == "pip":
+            mode = CompositionMode.PIP
+
+        if "." not in filename:
+            filename = f"{filename}.mp4"
+
+        # Keyword screencasts use 0.0 as placeholder timing
+        results.append(
+            ScreencastOverlay(
+                file=filename,
+                start=0.0,
+                end=0.0,
+                mode=mode,
+                start_keyword=start_keyword,
+                end_keyword=end_keyword,
+            )
+        )
+
+    # Parse numeric screencasts (skip those already matched as keyword)
     for match in SCREENCAST_PATTERN.finditer(text):
+        if (match.start(), match.end()) in keyword_spans:
+            continue
+
         filename = match.group(1)
         start = float(match.group(2))
         end = float(match.group(3))
@@ -66,7 +106,6 @@ def parse_screencast_tags(text: str) -> List[ScreencastOverlay]:
         if mode_str and mode_str.lower() == "pip":
             mode = CompositionMode.PIP
 
-        # Only append .mp4 if no extension present
         if "." not in filename:
             filename = f"{filename}.mp4"
 

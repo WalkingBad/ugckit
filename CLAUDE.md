@@ -7,34 +7,53 @@
 ## Quick Commands
 
 ```bash
-# Test parsing
-python3 -m ugckit.cli list-scripts --scripts-dir /path/to/scripts/
+# List scripts
+ugckit list-scripts -d /path/to/scripts/
 
 # Show script details
-python3 -m ugckit.cli show-script --script A1 --scripts-dir /path/to/scripts/
+ugckit show-script -s A1 --scripts-dir /path/to/scripts/
 
-# Dry-run composition
-python3 -m ugckit.cli compose --script A1 --avatars seg1.mp4 --avatars seg2.mp4 --dry-run
+# Dry-run overlay mode
+ugckit compose -s A1 --avatar-dir ./avatars/ -d ./scripts/ --dry-run
+
+# Dry-run PiP mode
+ugckit compose -s A1 --avatar-dir ./avatars/ -d ./scripts/ --mode pip --dry-run
+
+# Compose with Smart Sync
+ugckit compose -s A1 --avatar-dir ./avatars/ -d ./scripts/ --sync --dry-run
+
+# Batch all scripts
+ugckit batch -d ./scripts/ --avatar-dir ./avatars/ --dry-run
+
+# Web UI
+streamlit run streamlit_app.py
+
+# Tests
+pytest tests/ -v
 ```
 
 ## Architecture
 
 ```
 ugckit/
-├── cli.py        # Click CLI entry point
-├── parser.py     # MD → Script model (regex parsing)
-├── composer.py   # Timeline + FFmpeg filter_complex
-├── config.py     # YAML config loader
-└── models.py     # Pydantic models (Script, Timeline, Config)
+├── cli.py            # Click CLI entry point
+├── parser.py         # MD → Script model (regex parsing)
+├── composer.py       # Timeline + FFmpeg filter_complex (overlay + PiP)
+├── config.py         # YAML config loader
+├── models.py         # Pydantic models (Script, Timeline, Config)
+├── pip_processor.py  # PiP head extraction (basic FFmpeg + enhanced MediaPipe)
+└── sync.py           # Smart Sync (Whisper transcription + keyword matching)
 ```
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| [parser.py](ugckit/parser.py) | Markdown script parser with SAYS_PATTERN, CLIP_PATTERN |
-| [composer.py](ugckit/composer.py) | FFmpeg filter_complex builder, `build_timeline()`, `compose_video()` |
+| [parser.py](ugckit/parser.py) | Markdown script parser with SAYS_PATTERN, CLIP_PATTERN, SCREENCAST_KEYWORD_PATTERN |
+| [composer.py](ugckit/composer.py) | FFmpeg filter_complex builder, `build_timeline()`, `compose_video()`, `build_ffmpeg_filter_pip()` |
 | [models.py](ugckit/models.py) | Pydantic models: Script, Segment, Timeline, Config |
+| [pip_processor.py](ugckit/pip_processor.py) | Head extraction: `create_head_video()` (basic circular crop + enhanced face detection) |
+| [sync.py](ugckit/sync.py) | Whisper transcription, `match_keyword_timing()`, `sync_screencast_timing()` |
 | [ugckit/config/default.yaml](ugckit/config/default.yaml) | Default composition settings |
 
 ## Data Flow
@@ -54,6 +73,7 @@ Timeline + Config → FFmpeg filter_complex → Output video
 - `CLIP_PATTERN`: `**Clip 1 (VEO 8s):**`
 - `SAYS_PATTERN`: `Says: "text with apostrophes allowed"`
 - `SCREENCAST_PATTERN`: `[screencast: filename @ start-end mode:pip]`
+- `SCREENCAST_KEYWORD_PATTERN`: `[screencast: filename @ word:"start phrase"-word:"end phrase" mode:pip]`
 
 ### FFmpeg Composition (composer.py)
 - Scale avatars to 1080x1920
@@ -89,14 +109,13 @@ audio:
 | Phase | Status | Features |
 |-------|--------|----------|
 | 1. MVP | Done | CLI, parser, overlay mode, --dry-run |
-| 2. PiP | Pending | MediaPipe face detection, rembg background removal |
-| 3. Smart Sync | Pending | Whisper timestamps, keyword triggers |
+| 2. PiP | Done | Head extraction (basic FFmpeg + enhanced MediaPipe/rembg), PiP filter builder |
+| 3. Smart Sync | Done | Whisper word-level timestamps, keyword triggers in screencast tags |
 
 ## DO NOT
 
 1. Use `[\"']` in regex for quoted text (breaks on apostrophes)
 2. Add MoviePy dependency (pure FFmpeg only)
-3. Use PiP mode features until Phase 2 is implemented
 
 ## Related
 

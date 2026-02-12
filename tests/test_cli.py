@@ -203,6 +203,74 @@ class TestCompose:
         assert "Done!" in result.output
         assert output.exists()
 
+    def test_pip_mode_dry_run(self, runner, setup_workspace):
+        scripts_dir, avatar_dir = setup_workspace
+        make_fake_video(avatar_dir / "seg1.mp4", duration=2.0)
+        make_fake_video(avatar_dir / "seg2.mp4", duration=2.0)
+
+        result = runner.invoke(
+            main,
+            [
+                "compose",
+                "-s",
+                "T1",
+                "--avatar-dir",
+                str(avatar_dir),
+                "-d",
+                str(scripts_dir),
+                "--mode",
+                "pip",
+                "--dry-run",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Timeline for T1" in result.output
+        assert "ffmpeg" in result.output
+
+    def test_head_scale_option(self, runner, setup_workspace):
+        scripts_dir, avatar_dir = setup_workspace
+        make_fake_video(avatar_dir / "seg1.mp4", duration=2.0)
+
+        result = runner.invoke(
+            main,
+            [
+                "compose",
+                "-s",
+                "T1",
+                "--avatar-dir",
+                str(avatar_dir),
+                "-d",
+                str(scripts_dir),
+                "--head-scale",
+                "0.3",
+                "--dry-run",
+            ],
+        )
+        assert result.exit_code == 0
+
+    def test_sync_flag_without_whisper(self, runner, setup_workspace):
+        scripts_dir, avatar_dir = setup_workspace
+        make_fake_video(avatar_dir / "seg1.mp4", duration=2.0)
+        make_fake_video(avatar_dir / "seg2.mp4", duration=2.0)
+
+        result = runner.invoke(
+            main,
+            [
+                "compose",
+                "-s",
+                "T1",
+                "--avatar-dir",
+                str(avatar_dir),
+                "-d",
+                str(scripts_dir),
+                "--sync",
+                "--dry-run",
+            ],
+        )
+        # Should warn about missing whisper but still succeed
+        assert result.exit_code == 0
+        assert "Smart Sync" in result.output
+
 
 # ── batch ───────────────────────────────────────────────────────────────
 

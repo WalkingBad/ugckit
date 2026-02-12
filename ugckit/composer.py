@@ -9,7 +9,7 @@ import shlex
 import subprocess
 import warnings
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 from ugckit.models import (
     Config,
@@ -162,6 +162,7 @@ def build_timeline(
                         type="screencast",
                         file=sc_path,
                         parent_segment=segment.id,
+                        composition_mode=sc.mode,
                     )
                 )
             else:
@@ -335,6 +336,156 @@ def build_ffmpeg_filter_overlay(
     return ";".join(filters)
 
 
+def build_ffmpeg_filter_pip(
+    timeline: Timeline,
+    config: Config,
+    audio_presence: Optional[List[bool]] = None,
+    head_videos: Optional[List[Path]] = None,
+) -> str:
+    """Build FFmpeg filter_complex string for PiP mode.
+
+    In PiP mode: screencast goes fullscreen as overlay, head video in corner.
+
+    Args:
+        timeline: Composition timeline.
+        config: UGCKit configuration.
+        audio_presence: Per-clip audio presence flags.
+        head_videos: Pre-processed head video files (one per avatar clip).
+
+    Returns:
+        FFmpeg filter_complex string.
+    """
+    from ugckit.models import CompositionMode
+
+    filters = []
+    output_cfg = config.output
+    pip_cfg = config.composition.pip
+
+    avatar_entries = [e for e in timeline.entries if e.type == "avatar"]
+    screencast_entries = [e for e in timeline.entries if e.type == "screencast"]
+    pip_screencasts = [e for e in screencast_entries if e.composition_mode == CompositionMode.PIP]
+    overlay_screencasts = [
+        e for e in screencast_entries if e.composition_mode != CompositionMode.PIP
+    ]
+
+    if audio_presence is None:
+        audio_presence = [True] * len(avatar_entries)
+    if len(audio_presence) != len(avatar_entries):
+        raise ValueError("audio_presence length must match avatar entries")
+
+    # Input layout:
+    # [0..n-1]: avatar clips
+    # [n..n+sc-1]: screencast clips
+    # [n+sc..]: head videos (if provided)
+    num_avatars = len(avatar_entries)
+    num_screencasts = len(screencast_entries)
+    head_input_offset = num_avatars + num_screencasts
+
+    # Scale avatars to output resolution
+    for i in range(num_avatars):
+        filters.append(
+            f"[{i}:v]scale={output_cfg.resolution[0]}:{output_cfg.resolution[1]},"
+            f"setsar=1[av{i}]"
+        )
+
+    # Concatenate avatars
+    if num_avatars > 1:
+        concat_inputs = "".join(f"[av{i}]" for i in range(num_avatars))
+        filters.append(f"{concat_inputs}concat=n={num_avatars}:v=1:a=0[base]")
+    else:
+        filters.append("[av0]copy[base]")
+
+    # Build audio timeline (same as overlay mode - audio from avatars)
+    audio_labels = []
+    for i, has_audio in enumerate(audio_presence):
+        label = f"a{i}"
+        if has_audio:
+            filters.append(f"[{i}:a]aresample=48000,asetpts=PTS-STARTPTS[{label}]")
+        else:
+            duration = avatar_entries[i].end - avatar_entries[i].start
+            filters.append(
+                f"anullsrc=r=48000:cl=stereo,atrim=0:{duration:.2f},"
+                f"asetpts=PTS-STARTPTS[{label}]"
+            )
+        audio_labels.append(f"[{label}]")
+
+    if len(audio_labels) > 1:
+        filters.append(f"{''.join(audio_labels)}concat=n={len(audio_labels)}:v=0:a=1[audio]")
+    elif len(audio_labels) == 1:
+        filters.append(f"{audio_labels[0]}anull[audio]")
+    else:
+        filters.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{timeline.total_duration:.2f}[audio]")
+
+    current_base = "base"
+
+    # Apply overlay-mode screencasts (same as before)
+    overlay_cfg = config.composition.overlay
+    for i, sc_entry in enumerate(overlay_screencasts):
+        # Find this screencast's input index
+        sc_idx = num_avatars + screencast_entries.index(sc_entry)
+        next_base = f"ov{i}"
+
+        scale_w = int(output_cfg.resolution[0] * overlay_cfg.scale)
+        filters.append(f"[{sc_idx}:v]scale={scale_w}:-1[osc{i}]")
+
+        x, y = position_to_overlay_coords(overlay_cfg.position, overlay_cfg.margin, "w", "h")
+        enable = f"between(t,{sc_entry.start:.2f},{sc_entry.end:.2f})"
+        filters.append(
+            f"[{current_base}][osc{i}]overlay=x={x}:y={y}:enable='{enable}'[{next_base}]"
+        )
+        current_base = next_base
+
+    # Apply PiP screencasts (screencast fullscreen, head in corner)
+    for i, sc_entry in enumerate(pip_screencasts):
+        sc_idx = num_avatars + screencast_entries.index(sc_entry)
+
+        # Scale screencast to fullscreen
+        next_base_sc = f"pip_sc{i}"
+        filters.append(
+            f"[{sc_idx}:v]scale={output_cfg.resolution[0]}:{output_cfg.resolution[1]},"
+            f"setsar=1[psc{i}]"
+        )
+
+        # Overlay fullscreen screencast on base
+        enable = f"between(t,{sc_entry.start:.2f},{sc_entry.end:.2f})"
+        filters.append(f"[{current_base}][psc{i}]overlay=0:0:enable='{enable}'[{next_base_sc}]")
+        current_base = next_base_sc
+
+        # Overlay head video in corner (if head videos provided)
+        if head_videos:
+            # Find which avatar this screencast belongs to
+            seg_id = sc_entry.parent_segment
+            avatar_idx = None
+            for ai, ae in enumerate(avatar_entries):
+                if ae.parent_segment == seg_id:
+                    avatar_idx = ai
+                    break
+
+            if avatar_idx is not None and avatar_idx < len(head_videos):
+                head_idx = head_input_offset + avatar_idx
+                next_base_head = f"pip_h{i}"
+
+                x, y = position_to_overlay_coords(
+                    pip_cfg.head_position, pip_cfg.head_margin, "w", "h"
+                )
+                filters.append(
+                    f"[{current_base}][{head_idx}:v]overlay=x={x}:y={y}:"
+                    f"enable='{enable}'[{next_base_head}]"
+                )
+                current_base = next_base_head
+
+    # Final output
+    filters.append(f"[{current_base}]null[vout]")
+
+    # Audio normalization
+    if config.audio.normalize:
+        filters.append(f"[audio]loudnorm=I={config.audio.target_loudness}:TP=-1.5:LRA=11[aout]")
+    else:
+        filters.append("[audio]anull[aout]")
+
+    return ";".join(filters)
+
+
 def validate_timeline_files(timeline: Timeline) -> None:
     """Validate all files in timeline exist.
 
@@ -353,17 +504,32 @@ def validate_timeline_files(timeline: Timeline) -> None:
         raise FFmpegError(f"Missing files: {', '.join(missing)}")
 
 
+def _timeline_has_pip(timeline: Timeline) -> bool:
+    """Check if timeline has any PiP mode screencasts."""
+    from ugckit.models import CompositionMode
+
+    return any(
+        e.composition_mode == CompositionMode.PIP
+        for e in timeline.entries
+        if e.type == "screencast"
+    )
+
+
 def compose_video(
     timeline: Timeline,
     config: Config,
     dry_run: bool = False,
+    head_videos: Optional[List[Path]] = None,
 ) -> Union[Path, List[str]]:
     """Compose final video from timeline.
+
+    Automatically selects overlay or PiP filter builder based on timeline entries.
 
     Args:
         timeline: Composition timeline.
         config: UGCKit configuration.
         dry_run: If True, return command list without executing.
+        head_videos: Pre-processed head video files for PiP mode.
 
     Returns:
         Path to output video, or command list if dry_run.
@@ -391,12 +557,26 @@ def compose_video(
     for entry in screencast_entries:
         inputs.extend(["-i", str(entry.file)])
 
+    # Add head video inputs for PiP mode
+    use_pip = _timeline_has_pip(timeline)
+    if use_pip and head_videos:
+        for hv in head_videos:
+            inputs.extend(["-i", str(hv)])
+
     # Build filter complex
-    filter_complex = build_ffmpeg_filter_overlay(
-        timeline,
-        config,
-        audio_presence=audio_presence,
-    )
+    if use_pip:
+        filter_complex = build_ffmpeg_filter_pip(
+            timeline,
+            config,
+            audio_presence=audio_presence,
+            head_videos=head_videos,
+        )
+    else:
+        filter_complex = build_ffmpeg_filter_overlay(
+            timeline,
+            config,
+            audio_presence=audio_presence,
+        )
 
     # Build output arguments
     output_cfg = config.output
@@ -445,12 +625,17 @@ def compose_video(
     return timeline.output_path
 
 
-def build_ffmpeg_cmd(timeline: Timeline, config: Config) -> List[str]:
+def build_ffmpeg_cmd(
+    timeline: Timeline,
+    config: Config,
+    head_videos: Optional[List[Path]] = None,
+) -> List[str]:
     """Build the full FFmpeg command for a timeline.
 
     Args:
         timeline: Composition timeline.
         config: UGCKit configuration.
+        head_videos: Pre-processed head video files for PiP mode.
 
     Returns:
         FFmpeg command as list of strings.
@@ -475,7 +660,19 @@ def build_ffmpeg_cmd(timeline: Timeline, config: Config) -> List[str]:
     for entry in screencast_entries:
         inputs.extend(["-i", str(entry.file)])
 
-    filter_complex = build_ffmpeg_filter_overlay(timeline, config, audio_presence=audio_presence)
+    use_pip = _timeline_has_pip(timeline)
+    if use_pip and head_videos:
+        for hv in head_videos:
+            inputs.extend(["-i", str(hv)])
+
+    if use_pip:
+        filter_complex = build_ffmpeg_filter_pip(
+            timeline, config, audio_presence=audio_presence, head_videos=head_videos
+        )
+    else:
+        filter_complex = build_ffmpeg_filter_overlay(
+            timeline, config, audio_presence=audio_presence
+        )
 
     output_cfg = config.output
     output_args = [
@@ -515,6 +712,7 @@ def compose_video_with_progress(
     timeline: Timeline,
     config: Config,
     progress_callback: Callable[[float], None],
+    head_videos: Optional[List[Path]] = None,
 ) -> Path:
     """Compose video with progress reporting.
 
@@ -524,6 +722,7 @@ def compose_video_with_progress(
         timeline: Composition timeline.
         config: UGCKit configuration.
         progress_callback: Called with float 0.0-1.0 as rendering progresses.
+        head_videos: Pre-processed head video files for PiP mode.
 
     Returns:
         Path to output video.
@@ -532,7 +731,7 @@ def compose_video_with_progress(
         ValueError: If timeline has no output_path.
         FFmpegError: If FFmpeg fails.
     """
-    cmd = build_ffmpeg_cmd(timeline, config)
+    cmd = build_ffmpeg_cmd(timeline, config, head_videos=head_videos)
 
     # Insert progress flags before output path
     # Replace -y with progress args + -y
