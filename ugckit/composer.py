@@ -276,26 +276,8 @@ def build_ffmpeg_filter_overlay(
     else:
         filters.append("[av0]copy[base]")
 
-    # Build audio timeline per clip
-    audio_labels = []
-    for i, has_audio in enumerate(audio_presence):
-        label = f"a{i}"
-        if has_audio:
-            filters.append(f"[{i}:a]aresample=48000,asetpts=PTS-STARTPTS[{label}]")
-        else:
-            duration = avatar_entries[i].end - avatar_entries[i].start
-            filters.append(
-                f"anullsrc=r=48000:cl=stereo,atrim=0:{duration:.2f},"
-                f"asetpts=PTS-STARTPTS[{label}]"
-            )
-        audio_labels.append(f"[{label}]")
-
-    if len(audio_labels) > 1:
-        filters.append(f"{''.join(audio_labels)}concat=n={len(audio_labels)}:v=0:a=1[audio]")
-    elif len(audio_labels) == 1:
-        filters.append(f"{audio_labels[0]}anull[audio]")
-    else:
-        filters.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{timeline.total_duration:.2f}[audio]")
+    # Audio
+    _build_audio_pipeline(filters, avatar_entries, audio_presence, timeline.total_duration)
 
     # Apply screencast overlays
     current_base = "base"
@@ -323,18 +305,8 @@ def build_ffmpeg_filter_overlay(
         current_base = next_base
 
     # Final output
-    if screencast_entries:
-        filters.append(f"[{current_base}]null[vout]")
-    else:
-        filters.append("[base]null[vout]")
-
-    # Audio normalization
-    if config.audio.normalize:
-        filters.append(f"[audio]loudnorm=I={config.audio.target_loudness}:TP=-1.5:LRA=11[aout]")
-    else:
-        filters.append("[audio]anull[aout]")
-
-    return ";".join(filters)
+    final_base = current_base if screencast_entries else "base"
+    return _finalize_filter(filters, final_base, config)
 
 
 def build_ffmpeg_filter_pip(
@@ -395,26 +367,8 @@ def build_ffmpeg_filter_pip(
     else:
         filters.append("[av0]copy[base]")
 
-    # Build audio timeline (same as overlay mode - audio from avatars)
-    audio_labels = []
-    for i, has_audio in enumerate(audio_presence):
-        label = f"a{i}"
-        if has_audio:
-            filters.append(f"[{i}:a]aresample=48000,asetpts=PTS-STARTPTS[{label}]")
-        else:
-            duration = avatar_entries[i].end - avatar_entries[i].start
-            filters.append(
-                f"anullsrc=r=48000:cl=stereo,atrim=0:{duration:.2f},"
-                f"asetpts=PTS-STARTPTS[{label}]"
-            )
-        audio_labels.append(f"[{label}]")
-
-    if len(audio_labels) > 1:
-        filters.append(f"{''.join(audio_labels)}concat=n={len(audio_labels)}:v=0:a=1[audio]")
-    elif len(audio_labels) == 1:
-        filters.append(f"{audio_labels[0]}anull[audio]")
-    else:
-        filters.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{timeline.total_duration:.2f}[audio]")
+    # Audio
+    _build_audio_pipeline(filters, avatar_entries, audio_presence, timeline.total_duration)
 
     current_base = "base"
 
@@ -475,15 +429,7 @@ def build_ffmpeg_filter_pip(
                 current_base = next_base_head
 
     # Final output
-    filters.append(f"[{current_base}]null[vout]")
-
-    # Audio normalization
-    if config.audio.normalize:
-        filters.append(f"[audio]loudnorm=I={config.audio.target_loudness}:TP=-1.5:LRA=11[aout]")
-    else:
-        filters.append("[audio]anull[aout]")
-
-    return ";".join(filters)
+    return _finalize_filter(filters, current_base, config)
 
 
 def _build_audio_pipeline(
@@ -512,6 +458,16 @@ def _build_audio_pipeline(
         filters.append(f"{audio_labels[0]}anull[audio]")
     else:
         filters.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{timeline_total_duration:.2f}[audio]")
+
+
+def _finalize_filter(filters: list, current_base: str, config: Config) -> str:
+    """Finalize filter chain with video output and audio normalization."""
+    filters.append(f"[{current_base}]null[vout]")
+    if config.audio.normalize:
+        filters.append(f"[audio]loudnorm=I={config.audio.target_loudness}:TP=-1.5:LRA=11[aout]")
+    else:
+        filters.append("[audio]anull[aout]")
+    return ";".join(filters)
 
 
 def build_ffmpeg_filter_split(
@@ -581,18 +537,8 @@ def build_ffmpeg_filter_split(
         current_base = next_base
 
     # Final output
-    if screencast_entries:
-        filters.append(f"[{current_base}]null[vout]")
-    else:
-        filters.append("[base]null[vout]")
-
-    # Audio normalization
-    if config.audio.normalize:
-        filters.append(f"[audio]loudnorm=I={config.audio.target_loudness}:TP=-1.5:LRA=11[aout]")
-    else:
-        filters.append("[audio]anull[aout]")
-
-    return ";".join(filters)
+    final_base = current_base if screencast_entries else "base"
+    return _finalize_filter(filters, final_base, config)
 
 
 def build_ffmpeg_filter_greenscreen(
@@ -673,15 +619,7 @@ def build_ffmpeg_filter_greenscreen(
                 current_base = next_base_ta
 
     # Final output
-    filters.append(f"[{current_base}]null[vout]")
-
-    # Audio normalization
-    if config.audio.normalize:
-        filters.append(f"[audio]loudnorm=I={config.audio.target_loudness}:TP=-1.5:LRA=11[aout]")
-    else:
-        filters.append("[audio]anull[aout]")
-
-    return ";".join(filters)
+    return _finalize_filter(filters, current_base, config)
 
 
 def wrap_with_post_processing(
@@ -747,6 +685,18 @@ def _detect_composition_mode(timeline: Timeline) -> CompositionMode:
     return CompositionMode.OVERLAY
 
 
+_FILTER_BUILDERS = {
+    CompositionMode.OVERLAY: lambda tl, cfg, ap, **kw: build_ffmpeg_filter_overlay(tl, cfg, ap),
+    CompositionMode.PIP: lambda tl, cfg, ap, **kw: build_ffmpeg_filter_pip(
+        tl, cfg, ap, kw.get("head_videos")
+    ),
+    CompositionMode.SPLIT: lambda tl, cfg, ap, **kw: build_ffmpeg_filter_split(tl, cfg, ap),
+    CompositionMode.GREENSCREEN: lambda tl, cfg, ap, **kw: build_ffmpeg_filter_greenscreen(
+        tl, cfg, ap, kw.get("transparent_avatars")
+    ),
+}
+
+
 def validate_timeline_files(timeline: Timeline) -> None:
     """Validate all files in timeline exist.
 
@@ -763,11 +713,6 @@ def validate_timeline_files(timeline: Timeline) -> None:
 
     if missing:
         raise FFmpegError(f"Missing files: {', '.join(missing)}")
-
-
-def _timeline_has_pip(timeline: Timeline) -> bool:
-    """Check if timeline has any PiP mode screencasts (legacy helper)."""
-    return _detect_composition_mode(timeline) == CompositionMode.PIP
 
 
 def compose_video(
@@ -833,32 +778,14 @@ def compose_video(
         inputs.extend(["-i", str(effective_music)])
 
     # Build filter complex
-    if mode == CompositionMode.PIP:
-        filter_complex = build_ffmpeg_filter_pip(
-            timeline,
-            config,
-            audio_presence=audio_presence,
-            head_videos=head_videos,
-        )
-    elif mode == CompositionMode.SPLIT:
-        filter_complex = build_ffmpeg_filter_split(
-            timeline,
-            config,
-            audio_presence=audio_presence,
-        )
-    elif mode == CompositionMode.GREENSCREEN:
-        filter_complex = build_ffmpeg_filter_greenscreen(
-            timeline,
-            config,
-            audio_presence=audio_presence,
-            transparent_avatars=transparent_avatars,
-        )
-    else:
-        filter_complex = build_ffmpeg_filter_overlay(
-            timeline,
-            config,
-            audio_presence=audio_presence,
-        )
+    builder = _FILTER_BUILDERS[mode]
+    filter_complex = builder(
+        timeline,
+        config,
+        audio_presence,
+        head_videos=head_videos,
+        transparent_avatars=transparent_avatars,
+    )
 
     # Post-processing: subtitles + music
     filter_complex = wrap_with_post_processing(

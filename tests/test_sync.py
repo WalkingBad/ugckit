@@ -207,3 +207,26 @@ class TestSyncScreencastTiming:
 
         with pytest.raises(SyncError, match="openai-whisper"):
             transcribe_audio(tmp_path / "dummy.mp4")
+
+
+class TestWhisperModelCaching:
+    @patch("ugckit.sync.whisper", create=True)
+    def test_model_loaded_once_for_same_name(self, mock_whisper_module):
+        """Whisper model should be loaded once and cached for repeated calls."""
+        from ugckit.sync import _get_whisper_model, _whisper_cache
+
+        # Clear cache for isolation
+        _whisper_cache.clear()
+
+        # Patch the import inside _get_whisper_model
+        import sys
+
+        mock_model = type("MockModel", (), {"transcribe": lambda self, *a, **kw: {}})()
+        mock_whisper = type("MockWhisper", (), {"load_model": lambda self, name: mock_model})()
+
+        with patch.dict(sys.modules, {"whisper": mock_whisper}):
+            m1 = _get_whisper_model("base")
+            m2 = _get_whisper_model("base")
+
+        assert m1 is m2
+        _whisper_cache.clear()

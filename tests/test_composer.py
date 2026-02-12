@@ -629,3 +629,40 @@ class TestDetectCompositionMode:
         ]
         tl = Timeline(script_id="M", total_duration=8, entries=entries)
         assert _detect_composition_mode(tl) == CompositionMode.GREENSCREEN
+
+
+# ── Finalize filter tests ────────────────────────────────────────────
+
+
+class TestFinalizeFilter:
+    def test_normalize(self):
+        from ugckit.composer import _finalize_filter
+
+        filters = ["[0:v]null[base]"]
+        cfg = Config()
+        result = _finalize_filter(filters, "base", cfg)
+        assert "[base]null[vout]" in result
+        assert "loudnorm" in result
+        assert "[aout]" in result
+
+    def test_no_normalize(self):
+        from ugckit.composer import _finalize_filter
+
+        filters = ["[0:v]null[base]"]
+        cfg = Config()
+        cfg.audio.normalize = False
+        result = _finalize_filter(filters, "base", cfg)
+        assert "[base]null[vout]" in result
+        assert "[audio]anull[aout]" in result
+        assert "loudnorm" not in result
+
+
+# ── Filter builder registry tests ────────────────────────────────────
+
+
+class TestFilterBuilderRegistry:
+    def test_covers_all_modes(self):
+        from ugckit.composer import _FILTER_BUILDERS
+
+        for mode in CompositionMode:
+            assert mode in _FILTER_BUILDERS, f"Missing builder for {mode}"

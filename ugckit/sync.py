@@ -30,6 +30,20 @@ class SyncError(Exception):
     pass
 
 
+_whisper_cache: dict[str, object] = {}
+
+
+def _get_whisper_model(model_name: str):
+    """Load and cache a Whisper model."""
+    if model_name not in _whisper_cache:
+        try:
+            import whisper
+        except ImportError:
+            raise SyncError("Smart Sync requires openai-whisper: pip install openai-whisper")
+        _whisper_cache[model_name] = whisper.load_model(model_name)
+    return _whisper_cache[model_name]
+
+
 def transcribe_audio(
     video_path: Path,
     model_name: str = "base",
@@ -46,10 +60,8 @@ def transcribe_audio(
     Raises:
         SyncError: If Whisper fails or is not installed.
     """
-    try:
-        import whisper
-    except ImportError:
-        raise SyncError("Smart Sync requires openai-whisper: pip install openai-whisper")
+    # Validate whisper availability before expensive audio extraction
+    model = _get_whisper_model(model_name)
 
     # Extract audio to temp WAV
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
@@ -73,8 +85,6 @@ def transcribe_audio(
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         if result.returncode != 0:
             raise SyncError(f"Audio extraction failed: {result.stderr[:300]}")
-
-        model = whisper.load_model(model_name)
         result = model.transcribe(
             str(wav_path),
             word_timestamps=True,

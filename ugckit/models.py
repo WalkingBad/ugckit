@@ -80,32 +80,32 @@ class Timeline(BaseModel):
 class OverlayConfig(BaseModel):
     """Configuration for overlay mode."""
 
-    scale: float = 0.4
+    scale: float = Field(default=0.4, ge=0.1, le=1.0)
     position: Position = Position.BOTTOM_RIGHT
-    margin: int = 50
+    margin: int = Field(default=50, ge=0)
 
 
 class PipConfig(BaseModel):
     """Configuration for PiP mode."""
 
-    head_scale: float = 0.25
+    head_scale: float = Field(default=0.25, ge=0.05, le=0.5)
     head_position: Position = Position.TOP_RIGHT
-    head_margin: int = 30
+    head_margin: int = Field(default=30, ge=0)
 
 
 class SplitConfig(BaseModel):
     """Configuration for split screen mode."""
 
-    avatar_side: str = "left"  # "left" or "right"
-    split_ratio: float = 0.5  # 0.5 = 50/50
+    avatar_side: Literal["left", "right"] = "left"
+    split_ratio: float = Field(default=0.5, ge=0.2, le=0.8)
 
 
 class GreenScreenConfig(BaseModel):
     """Configuration for green screen mode."""
 
-    avatar_scale: float = 0.8
+    avatar_scale: float = Field(default=0.8, ge=0.1, le=1.0)
     avatar_position: Position = Position.BOTTOM_RIGHT
-    avatar_margin: int = 30
+    avatar_margin: int = Field(default=30, ge=0)
 
 
 class SubtitleConfig(BaseModel):
@@ -113,10 +113,10 @@ class SubtitleConfig(BaseModel):
 
     enabled: bool = False
     font_name: str = "Arial"
-    font_size: int = 48
-    outline_width: int = 3
-    position_y: int = 200  # pixels from bottom
-    max_words_per_line: int = 5
+    font_size: int = Field(default=48, ge=8, le=200)
+    outline_width: int = Field(default=3, ge=0, le=20)
+    position_y: int = Field(default=200, ge=0)
+    max_words_per_line: int = Field(default=5, ge=1, le=20)
     highlight_color: str = "&H0000FFFF"  # ASS yellow highlight
     whisper_model: str = "base"
 
@@ -126,26 +126,26 @@ class MusicConfig(BaseModel):
 
     enabled: bool = False
     file: Optional[Path] = None
-    volume: float = 0.15  # 0.0-1.0
-    fade_out_duration: float = 2.0
+    volume: float = Field(default=0.15, ge=0.0, le=1.0)
+    fade_out_duration: float = Field(default=2.0, ge=0.0)
     loop: bool = True
 
 
 class OutputConfig(BaseModel):
     """Output video configuration."""
 
-    fps: int = 30
+    fps: int = Field(default=30, ge=1, le=120)
     resolution: Tuple[int, int] = (1080, 1920)
     codec: str = "libx264"
     preset: str = "medium"
-    crf: int = 23
+    crf: int = Field(default=23, ge=0, le=51)
 
 
 class AudioConfig(BaseModel):
     """Audio processing configuration."""
 
     normalize: bool = True
-    target_loudness: int = -14
+    target_loudness: int = Field(default=-14, ge=-70, le=0)
     codec: str = "aac"
     bitrate: str = "192k"
 

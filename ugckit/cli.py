@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-import tempfile
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -19,85 +18,12 @@ from ugckit.composer import (
 from ugckit.config import load_config
 from ugckit.models import CompositionMode, Position
 from ugckit.parser import load_script, parse_scripts_directory
-
-
-def _prepare_pip(
-    avatar_list: list[Path],
-    config,
-    head_position: str,
-    head_scale: float,
-) -> list[Path]:
-    """Pre-process avatar clips for PiP mode: generate head videos."""
-    from ugckit.pip_processor import PipProcessingError, create_head_video
-
-    config.composition.pip.head_position = Position(head_position)
-    config.composition.pip.head_scale = head_scale
-
-    head_videos = []
-    tmp_dir = Path(tempfile.mkdtemp(prefix="ugckit_pip_"))
-
-    for i, avatar in enumerate(avatar_list):
-        head_out = tmp_dir / f"head_{i}.webm"
-        try:
-            head_path = create_head_video(avatar, head_out, config.composition.pip)
-            head_videos.append(head_path)
-            click.echo(f"  Head video {i+1}/{len(avatar_list)}: {head_path.name}")
-        except PipProcessingError as e:
-            click.echo(f"  Warning: head extraction failed for {avatar.name}: {e}", err=True)
-            return []
-
-    return head_videos
-
-
-def _apply_sync(parsed_script, avatar_list: list[Path], model_name: str):
-    """Apply Smart Sync (Whisper) to resolve keyword-based screencast timing."""
-    from ugckit.sync import SyncError, sync_screencast_timing
-
-    try:
-        return sync_screencast_timing(parsed_script, avatar_list, model_name)
-    except SyncError as e:
-        click.echo(f"Warning: Smart Sync failed: {e}", err=True)
-        return parsed_script
-
-
-def _prepare_greenscreen(
-    avatar_list: list[Path],
-    config,
-) -> list[Path]:
-    """Pre-process avatar clips for green screen mode: remove backgrounds."""
-    from ugckit.pip_processor import PipProcessingError, create_transparent_avatar
-
-    gs_cfg = config.composition.greenscreen
-    transparent_avatars = []
-    tmp_dir = Path(tempfile.mkdtemp(prefix="ugckit_gs_"))
-
-    for i, avatar in enumerate(avatar_list):
-        out = tmp_dir / f"transparent_{i}.webm"
-        try:
-            ta_path = create_transparent_avatar(
-                avatar,
-                out,
-                scale=gs_cfg.avatar_scale,
-                output_width=config.output.resolution[0],
-            )
-            transparent_avatars.append(ta_path)
-            click.echo(f"  Transparent avatar {i+1}/{len(avatar_list)}: {ta_path.name}")
-        except (ImportError, PipProcessingError) as e:
-            click.echo(f"  Warning: green screen failed for {avatar.name}: {e}", err=True)
-            return []
-
-    return transparent_avatars
-
-
-def _generate_subtitles(timeline, avatar_list: list[Path], config):
-    """Generate ASS subtitle file from avatar speech."""
-    try:
-        from ugckit.subtitles import generate_subtitle_file
-
-        return generate_subtitle_file(timeline, avatar_list, config)
-    except Exception as e:
-        click.echo(f"Warning: subtitle generation failed: {e}", err=True)
-        return None
+from ugckit.pipeline import (
+    apply_sync,
+    generate_subtitles,
+    prepare_greenscreen_videos,
+    prepare_pip_videos,
+)
 
 
 @click.group()
@@ -315,7 +241,7 @@ def compose(
     # Smart Sync: resolve keyword-based screencast timing
     if sync:
         click.echo("Running Smart Sync (Whisper)...")
-        parsed_script = _apply_sync(parsed_script, avatar_list, sync_model)
+        parsed_script = apply_sync(parsed_script, avatar_list, sync_model)
 
     # Override screencast modes based on --mode
     mode_enum = CompositionMode(mode)
@@ -368,7 +294,9 @@ def compose(
     head_videos = None
     if mode == "pip":
         click.echo("Generating head videos for PiP mode...")
-        head_videos = _prepare_pip(avatar_list, cfg, head_position, head_scale)
+        cfg.composition.pip.head_position = Position(head_position)
+        cfg.composition.pip.head_scale = head_scale
+        head_videos = prepare_pip_videos(avatar_list, cfg)
         if not head_videos:
             click.echo("Warning: PiP head extraction failed, using overlay mode", err=True)
 
@@ -376,7 +304,7 @@ def compose(
     transparent_avatars = None
     if mode == "greenscreen":
         click.echo("Generating transparent avatars for green screen mode...")
-        transparent_avatars = _prepare_greenscreen(avatar_list, cfg)
+        transparent_avatars = prepare_greenscreen_videos(avatar_list, cfg)
         if not transparent_avatars:
             click.echo("Warning: green screen processing failed, using overlay mode", err=True)
 
@@ -384,7 +312,7 @@ def compose(
     subtitle_file = None
     if subtitles:
         click.echo("Generating subtitles (Whisper)...")
-        subtitle_file = _generate_subtitles(timeline, avatar_list, cfg)
+        subtitle_file = generate_subtitles(timeline, avatar_list, cfg)
 
     # Display timeline
     click.echo(format_timeline(timeline))

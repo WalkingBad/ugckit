@@ -55,10 +55,11 @@ ugckit/
 ├── parser.py         # MD → Script model (regex parsing)
 ├── composer.py       # Timeline + FFmpeg filter_complex (overlay/PiP/split/greenscreen)
 ├── config.py         # YAML config loader
-├── models.py         # Pydantic models (Script, Timeline, Config)
+├── models.py         # Pydantic models (Script, Timeline, Config) with Field validators
+├── pipeline.py       # Shared pipeline ops (PiP, greenscreen, sync, subtitles)
 ├── pip_processor.py  # PiP head extraction + green screen transparent avatar
 ├── subtitles.py      # Auto-subtitles (Whisper → ASS karaoke)
-└── sync.py           # Smart Sync (Whisper transcription + keyword matching)
+└── sync.py           # Smart Sync (Whisper transcription + keyword matching + model cache)
 ```
 
 ## Key Files
@@ -66,8 +67,9 @@ ugckit/
 | File | Purpose |
 |------|---------|
 | [parser.py](ugckit/parser.py) | Markdown script parser with SAYS_PATTERN, CLIP_PATTERN, SCREENCAST_KEYWORD_PATTERN |
-| [composer.py](ugckit/composer.py) | FFmpeg filter_complex builders for all 4 modes + `wrap_with_post_processing()` |
-| [models.py](ugckit/models.py) | Pydantic models: Script, Segment, Timeline, Config, SplitConfig, GreenScreenConfig, SubtitleConfig, MusicConfig |
+| [composer.py](ugckit/composer.py) | FFmpeg filter_complex builders for all 4 modes + `_finalize_filter()` + `_FILTER_BUILDERS` registry |
+| [models.py](ugckit/models.py) | Pydantic models with Field validators: Script, Segment, Timeline, Config, SplitConfig, GreenScreenConfig, SubtitleConfig, MusicConfig |
+| [pipeline.py](ugckit/pipeline.py) | Shared pipeline: `prepare_pip_videos()`, `prepare_greenscreen_videos()`, `apply_sync()`, `generate_subtitles()` |
 | [pip_processor.py](ugckit/pip_processor.py) | `create_head_video()` (PiP) + `create_transparent_avatar()` (green screen) |
 | [subtitles.py](ugckit/subtitles.py) | Whisper transcription → ASS subtitle file with karaoke `\kf` tags |
 | [sync.py](ugckit/sync.py) | Whisper transcription, `match_keyword_timing()`, `sync_screencast_timing()` |

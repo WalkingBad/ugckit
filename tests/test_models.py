@@ -102,3 +102,133 @@ class TestPosition:
 
     def test_from_string(self):
         assert Position("bottom-right") == Position.BOTTOM_RIGHT
+
+
+class TestValidation:
+    """Tests for Pydantic field validation constraints."""
+
+    def test_valid_default_configs(self):
+        """All default configs should be valid."""
+        from ugckit.models import (
+            AudioConfig,
+            GreenScreenConfig,
+            MusicConfig,
+            OutputConfig,
+            OverlayConfig,
+            PipConfig,
+            SplitConfig,
+            SubtitleConfig,
+        )
+
+        OverlayConfig()
+        PipConfig()
+        SplitConfig()
+        GreenScreenConfig()
+        SubtitleConfig()
+        MusicConfig()
+        OutputConfig()
+        AudioConfig()
+
+    def test_overlay_scale_too_high(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import OverlayConfig
+
+        with pt.raises(ValidationError):
+            OverlayConfig(scale=1.5)
+
+    def test_overlay_scale_too_low(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import OverlayConfig
+
+        with pt.raises(ValidationError):
+            OverlayConfig(scale=0.05)
+
+    def test_split_ratio_out_of_bounds(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import SplitConfig
+
+        with pt.raises(ValidationError):
+            SplitConfig(split_ratio=0.1)
+        with pt.raises(ValidationError):
+            SplitConfig(split_ratio=0.9)
+
+    def test_split_avatar_side_invalid(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import SplitConfig
+
+        with pt.raises(ValidationError):
+            SplitConfig(avatar_side="center")
+
+    def test_music_volume_out_of_bounds(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import MusicConfig
+
+        with pt.raises(ValidationError):
+            MusicConfig(volume=2.0)
+        with pt.raises(ValidationError):
+            MusicConfig(volume=-0.1)
+
+    def test_output_crf_out_of_bounds(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import OutputConfig
+
+        with pt.raises(ValidationError):
+            OutputConfig(crf=52)
+        with pt.raises(ValidationError):
+            OutputConfig(crf=-1)
+
+    def test_pip_head_scale_bounds(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import PipConfig
+
+        with pt.raises(ValidationError):
+            PipConfig(head_scale=0.01)
+        with pt.raises(ValidationError):
+            PipConfig(head_scale=0.6)
+
+    def test_greenscreen_scale_bounds(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import GreenScreenConfig
+
+        with pt.raises(ValidationError):
+            GreenScreenConfig(avatar_scale=0.05)
+        with pt.raises(ValidationError):
+            GreenScreenConfig(avatar_scale=1.5)
+
+    def test_subtitle_font_size_bounds(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import SubtitleConfig
+
+        with pt.raises(ValidationError):
+            SubtitleConfig(font_size=4)
+        with pt.raises(ValidationError):
+            SubtitleConfig(font_size=250)
+
+    def test_audio_target_loudness_bounds(self):
+        import pytest as pt
+        from pydantic import ValidationError
+
+        from ugckit.models import AudioConfig
+
+        with pt.raises(ValidationError):
+            AudioConfig(target_loudness=-80)
+        with pt.raises(ValidationError):
+            AudioConfig(target_loudness=5)
