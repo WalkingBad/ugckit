@@ -80,7 +80,7 @@ def _pos_selectbox(label: str, default: str, help_text: str, key: str | None = N
 
 
 # ---------------------------------------------------------------------------
-# Custom CSS — Brutalist Swiss Style (dark theme + purple accent)
+# Custom CSS — Light Brutalist Swiss Style
 # ---------------------------------------------------------------------------
 st.markdown(
     """
@@ -92,27 +92,26 @@ st.markdown(
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 :root {
-    --accent: #7c5cfc;
-    --accent-soft: rgba(124, 92, 252, .12);
-    --accent-glow: rgba(124, 92, 252, .25);
-    --accent-bright: #9d85fd;
-    --accent-deep: #5a3fd6;
-    --surface: rgba(255, 255, 255, .03);
-    --surface-hover: rgba(255, 255, 255, .06);
-    --border: rgba(255, 255, 255, .06);
-    --border-accent: rgba(124, 92, 252, .3);
-    --text-primary: #e8e8ed;
-    --text-secondary: #8a8a95;
-    --text-muted: #6a6a75;
-    --success: #34d399;
-    --warning: #fbbf24;
-    --error: #f87171;
-    --radius: 14px;
-    --radius-sm: 10px;
-    --radius-xs: 8px;
+    --bg: #ffffff;
+    --ink: #000000;
+    --accent-red: #ff1a1a;
+    --accent-blue: #1a1aff;
+    --border: #000000;
+    --border-light: #e0e0e0;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --surface: #f5f5f5;
+    --surface-hover: #ececec;
+}
+
+h1, h2, h3 {
+    font-weight: 300 !important;
+    letter-spacing: -0.02em !important;
 }
 
 /* ── Noise texture overlay ───────────────────────────────────────── */
@@ -122,19 +121,18 @@ html, body, [class*="css"] {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 9999;
-    opacity: 0.04;
-    mix-blend-mode: overlay;
+    opacity: 0.4;
 }
 
 /* ── Main container ──────────────────────────────────────────────── */
 .main .block-container {
-    padding: 2.5rem 3rem 4rem !important;
-    max-width: 1200px;
+    padding: 2rem 2.5rem 4rem !important;
+    max-width: 1100px;
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0c0c16 0%, #08080f 100%) !important;
+    background: var(--bg) !important;
     border-right: 1px solid var(--border) !important;
 }
 
@@ -142,56 +140,42 @@ html, body, [class*="css"] {
     padding-top: 1.5rem;
 }
 
-/* Tighter sidebar spacing */
 [data-testid="stSidebar"] .stElementContainer {
     margin-bottom: 0 !important;
 }
 
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
-    gap: .35rem !important;
-}
-
-/* Sidebar header styling */
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
-    font-size: .7rem;
-    font-weight: 700;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    margin: 1rem 0 .5rem;
+    gap: .25rem !important;
 }
 
 /* ── Brutalist sidebar branding ──────────────────────────────────── */
 .sidebar-logo {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     font-weight: 300;
     letter-spacing: .08em;
-    color: var(--text-primary);
-    margin-bottom: .15rem;
+    color: var(--ink);
+    margin-bottom: .1rem;
 }
 
 .sidebar-logo .dot {
-    color: var(--accent);
-    margin: 0 1px;
+    margin: 0 2px;
 }
 
 .sidebar-version {
-    font-size: .65rem;
+    font-size: .6rem;
     font-weight: 300;
     letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-bottom: 1.25rem;
+    margin-bottom: .75rem;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--border);
 }
 
 /* ── Numbered upload blocks ──────────────────────────────────────── */
 .upload-block {
     border-bottom: 1px solid var(--border);
     padding: .85rem 0 .5rem;
-}
-
-.upload-block:last-child {
-    border-bottom: none;
 }
 
 .upload-block-header {
@@ -202,131 +186,122 @@ html, body, [class*="css"] {
 }
 
 .upload-block-title {
-    font-size: .92rem;
-    font-weight: 300;
-    letter-spacing: -0.01em;
-    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--ink);
 }
 
 .upload-block-title .num-index {
     font-weight: 300;
-    color: var(--text-muted);
-    margin-right: 6px;
-    font-size: .85rem;
+    color: var(--ink);
+    margin-right: 4px;
 }
 
 .upload-block-status {
-    font-size: .6rem;
-    font-weight: 500;
-    letter-spacing: .08em;
+    font-size: 11px;
+    letter-spacing: .03em;
     text-transform: uppercase;
-    padding: 2px 8px;
-    border-radius: 3px;
-}
-
-.upload-block-status.required {
-    color: var(--accent);
-    background: var(--accent-soft);
+    color: var(--ink);
 }
 
 .upload-block-status.optional {
-    color: var(--text-muted);
-    background: rgba(255,255,255,.03);
+    opacity: 0.5;
 }
 
 .upload-block-meta {
-    font-size: .68rem;
-    letter-spacing: .03em;
+    font-size: 11px;
+    letter-spacing: .05em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--ink);
     opacity: .7;
-    margin-bottom: .2rem;
+    margin-bottom: .3rem;
 }
 
 .upload-block-hint {
-    font-size: .72rem;
+    font-size: 11px;
     color: var(--text-secondary);
     line-height: 1.4;
-    margin-bottom: .35rem;
-    opacity: .8;
+    margin-bottom: .4rem;
 }
 
 .upload-counter {
-    font-size: .72rem;
-    color: var(--text-muted);
+    font-size: 11px;
+    color: var(--text-secondary);
     margin-top: .15rem;
 }
 
 /* ── File uploader ───────────────────────────────────────────────── */
 [data-testid="stFileUploader"] {
-    border-radius: var(--radius) !important;
+    border-radius: 0 !important;
     margin-bottom: .25rem !important;
 }
 
-/* Dropzone section (the dashed box) */
 [data-testid="stFileUploaderDropzone"] {
-    background: var(--surface) !important;
-    border: 1px dashed rgba(124, 92, 252, .15) !important;
-    border-radius: var(--radius-xs) !important;
-    padding: .65rem .75rem !important;
-    transition: all .2s ease;
+    background: var(--bg) !important;
+    border: 1px dashed var(--ink) !important;
+    border-radius: 0 !important;
+    padding: .75rem 1rem !important;
+    transition: background .2s;
     min-height: auto !important;
 }
 
 [data-testid="stFileUploaderDropzone"]:hover {
-    border-color: rgba(124, 92, 252, .45) !important;
-    background: var(--accent-soft) !important;
+    background: rgba(0,0,0,.02) !important;
+    border-color: var(--ink) !important;
 }
 
-/* Uploader button base styles */
 [data-testid="stFileUploaderDropzone"] button {
-    background: var(--accent) !important;
-    color: white !important;
+    background: var(--ink) !important;
+    color: var(--bg) !important;
     border: none !important;
-    border-radius: var(--radius-xs) !important;
-    font-weight: 600 !important;
+    border-radius: 0 !important;
+    font-weight: 400 !important;
     padding: .35rem .75rem !important;
-    font-size: .78rem !important;
-    transition: all .2s ease !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: .05em !important;
 }
 
 [data-testid="stFileUploaderDropzone"] button:hover {
-    filter: brightness(1.15) !important;
-    box-shadow: 0 4px 16px var(--accent-glow) !important;
+    opacity: .85 !important;
 }
 
 /* ── Tabs ────────────────────────────────────────────────────────── */
 [data-baseweb="tab-list"] {
-    gap: 4px !important;
-    background: var(--surface) !important;
-    border-radius: var(--radius) !important;
-    padding: 4px !important;
-    border: 1px solid var(--border) !important;
+    gap: 0 !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
 }
 
 [data-baseweb="tab"] {
-    border-radius: var(--radius-sm) !important;
+    border-radius: 0 !important;
     padding: .75rem 1.5rem !important;
-    font-weight: 600 !important;
-    font-size: .85rem !important;
+    font-weight: 400 !important;
+    font-size: 14px !important;
     color: var(--text-secondary) !important;
     transition: all .2s ease !important;
     border: none !important;
     background: transparent !important;
+    text-transform: uppercase !important;
+    letter-spacing: .03em !important;
 }
 
 [data-baseweb="tab"]:hover {
-    background: var(--surface-hover) !important;
-    color: var(--text-primary) !important;
+    color: var(--ink) !important;
+    background: transparent !important;
 }
 
 [aria-selected="true"] {
-    background: var(--accent) !important;
-    color: white !important;
-    box-shadow: 0 2px 12px var(--accent-glow) !important;
+    background: transparent !important;
+    color: var(--ink) !important;
+    border-bottom: 2px solid var(--ink) !important;
+    box-shadow: none !important;
+    font-weight: 500 !important;
 }
 
-/* Remove default tab underline */
 [data-baseweb="tab-highlight"],
 [data-baseweb="tab-border"] {
     display: none !important;
@@ -334,111 +309,100 @@ html, body, [class*="css"] {
 
 /* ── Buttons ─────────────────────────────────────────────────────── */
 .stButton > button {
-    border-radius: var(--radius-sm) !important;
-    font-weight: 600 !important;
-    font-size: .85rem !important;
-    padding: .65rem 1.5rem !important;
+    border-radius: 0 !important;
+    font-weight: 400 !important;
+    font-size: 13px !important;
+    padding: .6rem 1.5rem !important;
     border: 1px solid var(--border) !important;
-    background: var(--surface) !important;
-    color: var(--text-primary) !important;
+    background: var(--bg) !important;
+    color: var(--ink) !important;
     transition: all .2s ease !important;
-    backdrop-filter: blur(8px);
+    text-transform: uppercase !important;
+    letter-spacing: .05em !important;
 }
 
 .stButton > button:hover {
-    background: var(--surface-hover) !important;
-    border-color: var(--border-accent) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, .3) !important;
+    background: var(--surface) !important;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1) !important;
 }
 
-/* Primary button — gradient hover like macket */
+/* Primary button */
 [data-testid="stBaseButton-primary"],
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #7c5cfc 0%, #5a3fd6 100%) !important;
+    background: var(--ink) !important;
     border: none !important;
-    color: white !important;
-    box-shadow: 0 4px 16px var(--accent-glow) !important;
+    color: var(--bg) !important;
     text-transform: uppercase !important;
     letter-spacing: .05em !important;
-    font-weight: 500 !important;
+    font-weight: 400 !important;
     position: relative;
     overflow: hidden;
     transition: all .25s ease !important;
 }
 
-[data-testid="stBaseButton-primary"]:hover,
-.stButton > button[kind="primary"]:hover {
-    background: linear-gradient(45deg, var(--accent-bright), var(--accent-deep)) !important;
-    box-shadow: 0 8px 32px rgba(124, 92, 252, .45) !important;
+[data-testid="stBaseButton-primary"]::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(45deg, var(--accent-red), var(--accent-blue));
+    opacity: 0;
+    transition: opacity .3s;
+    z-index: 0;
+}
+
+[data-testid="stBaseButton-primary"]:hover::before {
+    opacity: 1;
+}
+
+[data-testid="stBaseButton-primary"]:hover {
     transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,.1) !important;
 }
 
 /* Download button */
 [data-testid="stDownloadButton"] button {
-    background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+    background: var(--ink) !important;
     border: none !important;
-    color: white !important;
-    box-shadow: 0 4px 16px rgba(52, 211, 153, .25) !important;
+    color: var(--bg) !important;
+    border-radius: 0 !important;
 }
 
 [data-testid="stDownloadButton"] button:hover {
-    filter: brightness(1.1) !important;
-    box-shadow: 0 6px 24px rgba(52, 211, 153, .35) !important;
+    opacity: .85 !important;
     transform: translateY(-2px) !important;
 }
 
 /* ── Expander ────────────────────────────────────────────────────── */
 [data-testid="stExpander"] {
-    background: var(--surface) !important;
+    background: var(--bg) !important;
     border: 1px solid var(--border) !important;
-    border-radius: var(--radius) !important;
+    border-radius: 0 !important;
     margin-bottom: .5rem;
     overflow: hidden;
 }
 
 [data-testid="stExpander"] summary {
-    font-weight: 600 !important;
-    font-size: .88rem !important;
+    font-weight: 400 !important;
+    font-size: 14px !important;
     padding: .85rem 1rem !important;
 }
 
 [data-testid="stExpander"] summary:hover {
-    background: var(--surface-hover) !important;
+    background: var(--surface) !important;
 }
 
 /* ── Alerts ──────────────────────────────────────────────────────── */
 [data-testid="stAlert"] {
-    border-radius: var(--radius) !important;
-    border: 1px solid var(--border) !important;
-    backdrop-filter: blur(8px);
-}
-
-.stAlert [data-testid="stAlertContentInfo"] {
-    background: rgba(124, 92, 252, .06) !important;
-    border-color: rgba(124, 92, 252, .15) !important;
-}
-
-.stAlert [data-testid="stAlertContentSuccess"] {
-    background: rgba(52, 211, 153, .06) !important;
-    border-color: rgba(52, 211, 153, .15) !important;
-}
-
-.stAlert [data-testid="stAlertContentWarning"] {
-    background: rgba(251, 191, 36, .06) !important;
-    border-color: rgba(251, 191, 36, .15) !important;
-}
-
-.stAlert [data-testid="stAlertContentError"] {
-    background: rgba(248, 113, 113, .06) !important;
-    border-color: rgba(248, 113, 113, .15) !important;
+    border-radius: 0 !important;
+    border: 1px solid var(--border-light) !important;
 }
 
 /* ── Code blocks ─────────────────────────────────────────────────── */
 [data-testid="stCode"],
 .stCodeBlock {
-    border-radius: var(--radius-sm) !important;
-    border: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+    border: 1px solid var(--border-light) !important;
 }
 
 code {
@@ -446,49 +410,51 @@ code {
     font-size: .82rem !important;
 }
 
-/* ── Select box / radio ──────────────────────────────────────────── */
+/* ── Select box ──────────────────────────────────────────────────── */
 [data-baseweb="select"] {
-    border-radius: var(--radius-sm) !important;
+    border-radius: 0 !important;
 }
 
 [data-baseweb="select"] > div {
-    background: var(--surface) !important;
-    border-color: var(--border) !important;
-    border-radius: var(--radius-sm) !important;
+    background: var(--bg) !important;
+    border: none !important;
+    border-bottom: 1px solid var(--ink) !important;
+    border-radius: 0 !important;
+    padding-left: 0 !important;
 }
 
 /* Radio (horizontal) */
 [data-testid="stRadio"] > div {
-    gap: 8px !important;
+    gap: 0 !important;
 }
 
 [data-testid="stRadio"] label {
-    background: var(--surface) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-sm) !important;
+    background: var(--bg) !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: 0 !important;
     padding: .5rem 1rem !important;
     transition: all .2s ease !important;
 }
 
 [data-testid="stRadio"] label:hover {
-    border-color: var(--border-accent) !important;
-    background: var(--surface-hover) !important;
+    background: var(--surface) !important;
+    border-color: var(--ink) !important;
 }
 
 /* ── Slider — diamond thumb ──────────────────────────────────────── */
 [data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
-    background: var(--accent) !important;
-    border-color: var(--accent) !important;
+    background: var(--ink) !important;
+    border-color: var(--ink) !important;
     border-radius: 2px !important;
     transform: rotate(45deg) !important;
-    width: 14px !important;
-    height: 14px !important;
+    width: 12px !important;
+    height: 12px !important;
 }
 
 /* ── Progress bar ────────────────────────────────────────────────── */
 [data-testid="stProgress"] > div > div {
-    background: linear-gradient(90deg, #7c5cfc, #5a3fd6) !important;
-    border-radius: 100px !important;
+    background: var(--ink) !important;
+    border-radius: 0 !important;
 }
 
 /* ── Divider ─────────────────────────────────────────────────────── */
@@ -500,33 +466,15 @@ hr {
 
 /* ── Checkbox ────────────────────────────────────────────────────── */
 [data-testid="stCheckbox"] span[data-baseweb="checkbox"] {
-    border-radius: 5px !important;
+    border-radius: 0 !important;
+    border-color: var(--ink) !important;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, .08);
-    border-radius: 100px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, .15);
-}
-
-/* ── Metric cards ────────────────────────────────────────────────── */
-[data-testid="stMetricValue"] {
-    font-weight: 700 !important;
-    font-size: 1.8rem !important;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.3); }
 
 /* ── Brutalist section headers ───────────────────────────────────── */
 .section-header-brutal {
@@ -534,98 +482,98 @@ hr {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border);
-    padding-bottom: .85rem;
+    padding-bottom: .75rem;
     margin-bottom: 1.25rem;
 }
 
 .section-header-brutal h2 {
-    font-size: 1.35rem;
+    font-size: 24px;
     font-weight: 300;
     letter-spacing: -0.02em;
-    color: var(--text-primary);
+    color: var(--ink);
     margin: 0;
 }
 
 .section-header-brutal .diamonds {
-    font-size: .65rem;
+    font-size: 12px;
     letter-spacing: 4px;
-    color: var(--accent);
-    opacity: .6;
+    color: var(--ink);
 }
 
-/* ── Brutalist labels ────────────────────────────────────────────── */
+/* ── Labels ──────────────────────────────────────────────────────── */
 .section-label {
-    font-size: .65rem;
-    font-weight: 500;
-    letter-spacing: .08em;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .05em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--ink);
     margin-bottom: .5rem;
     opacity: .7;
 }
 
 .section-desc {
-    font-size: .85rem;
+    font-size: 13px;
     font-weight: 300;
     color: var(--text-secondary);
     margin-bottom: 1rem;
+    line-height: 1.4;
 }
 
-/* ── Custom classes ──────────────────────────────────────────────── */
+/* ── Cards ───────────────────────────────────────────────────────── */
 .card {
-    background: var(--surface);
+    background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
     padding: 1.25rem;
 }
 
 .card-highlight {
-    background: var(--accent-soft);
-    border: 1px solid rgba(124, 92, 252, .15);
-    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border-light);
     padding: 1.25rem;
 }
 
-/* ── Stat row — brutalist thin numbers ───────────────────────────── */
+/* ── Stat row ────────────────────────────────────────────────────── */
 .stat-row {
     display: flex;
-    gap: 1rem;
+    gap: 0;
     margin: 1rem 0;
 }
 
 .stat-item {
     flex: 1;
-    background: var(--surface);
+    background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 1rem;
+    padding: 1.25rem 1rem;
     text-align: center;
 }
 
+.stat-item + .stat-item {
+    border-left: none;
+}
+
 .stat-value {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 300;
     letter-spacing: -0.02em;
-    color: var(--accent);
+    color: var(--ink);
 }
 
 .stat-label {
-    font-size: .65rem;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 400;
     letter-spacing: .05em;
     text-transform: uppercase;
     color: var(--text-secondary);
     margin-top: .35rem;
-    opacity: .7;
 }
 
 /* ── Segment cards ───────────────────────────────────────────────── */
 .segment-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border);
     padding: .85rem 1rem;
-    margin-bottom: .5rem;
+    margin-bottom: 0;
 }
 
 .segment-header {
@@ -639,40 +587,37 @@ hr {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
-    background: var(--accent-soft);
-    border-radius: 8px;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border);
     font-size: .75rem;
-    font-weight: 700;
-    color: var(--accent);
+    font-weight: 400;
+    color: var(--ink);
 }
 
 .segment-duration {
-    font-size: .75rem;
+    font-size: 11px;
     color: var(--text-muted);
     margin-left: auto;
 }
 
 .segment-text {
-    font-size: .85rem;
+    font-size: 13px;
     color: var(--text-secondary);
     line-height: 1.5;
-    padding-left: 2.25rem;
+    padding-left: 2.1rem;
 }
 
 .screencast-tag {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 3px 10px;
-    background: rgba(52, 211, 153, .08);
-    border: 1px solid rgba(52, 211, 153, .15);
-    border-radius: 6px;
-    font-size: .78rem;
-    font-weight: 500;
-    color: #34d399;
-    margin-left: 2.25rem;
+    padding: 2px 8px;
+    border: 1px solid var(--border-light);
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 2.1rem;
     margin-top: .25rem;
     font-family: 'JetBrains Mono', monospace;
 }
@@ -680,7 +625,7 @@ hr {
 /* ── Workflow steps ──────────────────────────────────────────────── */
 .workflow-steps {
     display: flex;
-    gap: .75rem;
+    gap: 0;
     margin: 1rem 0 1.5rem;
 }
 
@@ -689,43 +634,37 @@ hr {
     display: flex;
     align-items: center;
     gap: .5rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--border-light);
     padding: .75rem 1rem;
-    font-size: .82rem;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
+.workflow-step + .workflow-step {
+    border-left: none;
+}
+
 .workflow-step-active {
-    border-color: var(--border-accent);
-    color: var(--text-primary);
-    background: var(--accent-soft);
+    border-color: var(--ink);
+    color: var(--ink);
 }
 
 .workflow-step-done {
-    border-color: rgba(52, 211, 153, .2);
-    color: var(--success);
-    background: rgba(52, 211, 153, .04);
+    border-color: var(--ink);
+    color: var(--ink);
 }
 
 .workflow-num {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    background: var(--accent-soft);
-    border-radius: 7px;
-    font-size: .72rem;
-    font-weight: 700;
-    color: var(--accent);
-}
-
-.workflow-step-done .workflow-num {
-    background: rgba(52, 211, 153, .12);
-    color: var(--success);
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border: 1px solid currentColor;
+    font-size: 11px;
+    font-weight: 400;
 }
 
 /* ── Readiness / file status ─────────────────────────────────────── */
@@ -734,39 +673,37 @@ hr {
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: 6px;
-    font-size: .75rem;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: .03em;
 }
 
 .file-status-ok {
-    background: rgba(52, 211, 153, .08);
-    color: #34d399;
-    border: 1px solid rgba(52, 211, 153, .12);
+    color: var(--ink);
+    border: 1px solid var(--border);
 }
 
 .file-status-warn {
-    background: rgba(251, 191, 36, .08);
-    color: #fbbf24;
-    border: 1px solid rgba(251, 191, 36, .12);
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
 }
 
 .readiness-bar {
     display: flex;
-    gap: .75rem;
+    gap: .5rem;
     align-items: center;
     margin: .75rem 0;
     flex-wrap: wrap;
 }
 
 .mode-desc {
-    font-size: .82rem;
+    font-size: 13px;
     color: var(--text-secondary);
-    padding: .5rem .75rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--border-light);
     margin: .5rem 0 1rem;
+    line-height: 1.4;
 }
 
 /* ── Preview placeholder ─────────────────────────────────────────── */
@@ -776,36 +713,35 @@ hr {
     align-items: center;
     justify-content: center;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 3rem 2rem;
+    padding: 4rem 2rem;
     margin: 1.5rem 0;
     position: relative;
     overflow: hidden;
-    min-height: 300px;
-    background: rgba(0,0,0,.15);
+    min-height: 350px;
+    background: var(--bg);
 }
 
 .preview-placeholder .gradient-orb {
     position: absolute;
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(124,92,252,.3) 0%, rgba(124,92,252,0) 70%),
-                radial-gradient(circle, rgba(90,63,214,.2) 0%, rgba(90,63,214,0) 70%);
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,26,26,.12) 0%, rgba(255,26,26,0) 70%),
+                radial-gradient(circle, rgba(26,26,255,.08) 0%, rgba(26,26,255,0) 70%);
     background-position: 30% 30%, 70% 70%;
-    filter: blur(40px);
-    opacity: .5;
-    animation: breathe 8s infinite alternate;
+    filter: blur(50px);
+    opacity: .6;
+    animation: breathe 10s infinite alternate;
     pointer-events: none;
 }
 
 @keyframes breathe {
-    0% { transform: scale(1); opacity: .4; }
-    100% { transform: scale(1.15); opacity: .6; }
+    0% { transform: scale(1); opacity: .5; }
+    100% { transform: scale(1.1); opacity: .7; }
 }
 
 .preview-placeholder .preview-label {
-    font-size: .6rem;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 400;
     letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -814,10 +750,10 @@ hr {
 }
 
 .preview-placeholder .preview-text {
-    font-size: 1.5rem;
+    font-size: 24px;
     font-weight: 300;
     letter-spacing: -0.02em;
-    color: var(--text-secondary);
+    color: var(--ink);
     z-index: 1;
 }
 
@@ -826,35 +762,22 @@ hr {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: .65rem 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
+    padding: .65rem 0;
+    border-top: 1px solid var(--border);
     margin-top: .75rem;
-    background: var(--surface);
 }
 
 .status-bar .status-item {
-    font-size: .65rem;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 400;
     letter-spacing: .05em;
     text-transform: uppercase;
     color: var(--text-muted);
-    opacity: .7;
 }
 
 /* ── Hide default streamlit branding ─────────────────────────────── */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-
-/* ── Animation ───────────────────────────────────────────────────── */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.element-container {
-    animation: fadeIn .35s ease-out;
-}
 </style>
 <div class="noise-overlay"></div>
 """,
@@ -953,9 +876,9 @@ with st.sidebar:
         '<div class="upload-block">'
         '<div class="upload-block-header">'
         '<span class="upload-block-title"><span class="num-index">.01</span>Скрипт</span>'
-        '<span class="upload-block-status required">ОБЯЗАТЕЛЬНО</span>'
+        '<span class="upload-block-status">REQUIRED</span>'
         "</div>"
-        '<div class="upload-block-meta">Markdown (.md)</div>'
+        '<div class="upload-block-meta">Markdown (.md) &middot; Макс. 400 МБ</div>'
         '<div class="upload-block-hint">Загрузите сценарий с таймкодами и озвучкой.</div>'
         "</div>",
         unsafe_allow_html=True,
@@ -989,9 +912,9 @@ with st.sidebar:
         '<div class="upload-block">'
         '<div class="upload-block-header">'
         '<span class="upload-block-title"><span class="num-index">.02</span>Аватар</span>'
-        '<span class="upload-block-status required">ОБЯЗАТЕЛЬНО</span>'
+        '<span class="upload-block-status">REQUIRED</span>'
         "</div>"
-        '<div class="upload-block-meta">Видео (.mp4)</div>'
+        '<div class="upload-block-meta">Видео (.mp4) &middot; Макс. 400 МБ</div>'
         '<div class="upload-block-hint">Видео с AI-аватаром, по одному на клип.</div>'
         "</div>",
         unsafe_allow_html=True,
@@ -1025,9 +948,9 @@ with st.sidebar:
         '<div class="upload-block">'
         '<div class="upload-block-header">'
         '<span class="upload-block-title"><span class="num-index">.03</span>Скринкаст</span>'
-        '<span class="upload-block-status optional">ОПЦИОНАЛЬНО</span>'
+        '<span class="upload-block-status optional">OPTIONAL</span>'
         "</div>"
-        '<div class="upload-block-meta">Видео (.mp4)</div>'
+        '<div class="upload-block-meta">Видео (.mp4) &middot; Макс. 400 МБ</div>'
         '<div class="upload-block-hint">Запись экрана для наложения на видео.</div>'
         "</div>",
         unsafe_allow_html=True,
@@ -1061,9 +984,9 @@ with st.sidebar:
         '<div class="upload-block">'
         '<div class="upload-block-header">'
         '<span class="upload-block-title"><span class="num-index">.04</span>Музыка</span>'
-        '<span class="upload-block-status optional">ОПЦИОНАЛЬНО</span>'
+        '<span class="upload-block-status optional">OPTIONAL</span>'
         "</div>"
-        '<div class="upload-block-meta">Аудио (.mp3, .wav, .m4a, .ogg)</div>'
+        '<div class="upload-block-meta">Аудио (.mp3, .wav, .m4a, .ogg) &middot; Макс. 400 МБ</div>'
         '<div class="upload-block-hint">Фоновый трек, зацикленный на длину видео.</div>'
         "</div>",
         unsafe_allow_html=True,
@@ -1318,12 +1241,12 @@ with tab_scripts:
     if not all_scripts:
         st.markdown(
             '<div class="card-highlight" style="margin-bottom:1rem;">'
-            '<div style="font-size:.85rem; color:var(--text-secondary); line-height:1.6;">'
+            '<div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">'
             "Скрипты ещё не загружены. Перетащите <code>.md</code> файлы в боковую панель.<br><br>"
             "<strong>Ожидаемый формат:</strong>"
             "</div>"
-            '<div style="margin-top:.75rem; padding:.75rem 1rem; background:rgba(0,0,0,.2); '
-            "border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:.78rem; "
+            '<div style="margin-top:.75rem; padding:.75rem 1rem; background:rgba(0,0,0,.04); '
+            "border:1px solid var(--border-light); font-family:'JetBrains Mono',monospace; font-size:12px; "
             'color:var(--text-secondary); line-height:1.7;">'
             '### Script A1: "Название"<br>'
             "**Clip 1 (8s):**<br>"
