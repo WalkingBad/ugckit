@@ -28,6 +28,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+web = [
+    "streamlit>=1.30",
+]
 phase2 = [
     "mediapipe>=0.10",
     "rembg>=2.0",

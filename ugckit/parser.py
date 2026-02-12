@@ -15,7 +15,7 @@ from ugckit.models import CompositionMode, ScreencastOverlay, Script, Segment
 SCRIPT_HEADER_PATTERN = re.compile(
     r"###\s+Script\s+(\w+):\s+[\"']?(.+?)[\"']?\s*(?:\(|$)", re.MULTILINE
 )
-CLIP_PATTERN = re.compile(r"\*\*Clip\s+(\d+)\s*\(.*?\):\*\*")
+CLIP_PATTERN = re.compile(r"\*\*Clip\s+(\d+)\s*\((?:.*?(\d+)s|[^)]*)\):\*\*")
 # Match double-quoted text (allows apostrophes inside)
 SAYS_PATTERN = re.compile(r'Says:\s*"([^"]+)"', re.DOTALL)
 SCREENCAST_PATTERN = re.compile(
@@ -100,17 +100,16 @@ def parse_script_section(content: str, script_id: str, title: str) -> Script:
     if char_match:
         character = char_match.group(1).strip()
 
-    # Split into clips
-    clip_sections = re.split(CLIP_PATTERN, content)
+    # Find all clip headers and pair with their content
+    clip_matches = list(CLIP_PATTERN.finditer(content))
+    for idx, match in enumerate(clip_matches):
+        clip_num = int(match.group(1))
+        header_duration = int(match.group(2)) if match.group(2) else None
 
-    # Process clips (skip first element which is before first clip)
-    clip_num = 0
-    for i in range(1, len(clip_sections), 2):
-        if i + 1 >= len(clip_sections):
-            break
-
-        clip_num = int(clip_sections[i])
-        clip_content = clip_sections[i + 1]
+        # Extract content between this clip header and the next (or end)
+        start = match.end()
+        end = clip_matches[idx + 1].start() if idx + 1 < len(clip_matches) else len(content)
+        clip_content = content[start:end]
 
         # Extract speech text
         says_match = SAYS_PATTERN.search(clip_content)
@@ -118,7 +117,7 @@ def parse_script_section(content: str, script_id: str, title: str) -> Script:
             continue
 
         text = says_match.group(1).strip()
-        duration = estimate_duration(text)
+        duration = float(header_duration) if header_duration else estimate_duration(text)
 
         # Check for screencast tags
         screencasts = parse_screencast_tags(clip_content)

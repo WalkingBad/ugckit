@@ -7,10 +7,9 @@ from __future__ import annotations
 
 import shlex
 import subprocess
+import warnings
 from pathlib import Path
-from typing import List, Optional, Tuple
-
-import click
+from typing import Callable, List, Optional, Tuple
 
 from ugckit.models import (
     Config,
@@ -166,10 +165,7 @@ def build_timeline(
                     )
                 )
             else:
-                click.echo(
-                    f"Warning: screencast not found: {sc_path}",
-                    err=True,
-                )
+                warnings.warn(f"Screencast not found: {sc_path}", stacklevel=2)
 
         current_time += duration
 
@@ -361,16 +357,16 @@ def compose_video(
     timeline: Timeline,
     config: Config,
     dry_run: bool = False,
-) -> Optional[Path]:
+) -> Union[Path, List[str]]:
     """Compose final video from timeline.
 
     Args:
         timeline: Composition timeline.
         config: UGCKit configuration.
-        dry_run: If True, only print command without executing.
+        dry_run: If True, return command list without executing.
 
     Returns:
-        Path to output video, or None if dry_run.
+        Path to output video, or command list if dry_run.
 
     Raises:
         ValueError: If timeline has no output_path.
@@ -433,9 +429,7 @@ def compose_video(
     cmd = ["ffmpeg"] + inputs + ["-filter_complex", filter_complex] + output_args
 
     if dry_run:
-        click.echo("FFmpeg command:")
-        click.echo(shlex.join(cmd))
-        return None
+        return cmd
 
     # Ensure output directory exists
     timeline.output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -447,5 +441,135 @@ def compose_video(
         raise FFmpegError("FFmpeg rendering timed out (5 min limit)")
     if result.returncode != 0:
         raise FFmpegError(f"FFmpeg failed: {result.stderr}")
+
+    return timeline.output_path
+
+
+def build_ffmpeg_cmd(timeline: Timeline, config: Config) -> List[str]:
+    """Build the full FFmpeg command for a timeline.
+
+    Args:
+        timeline: Composition timeline.
+        config: UGCKit configuration.
+
+    Returns:
+        FFmpeg command as list of strings.
+
+    Raises:
+        ValueError: If timeline has no output_path.
+        FFmpegError: If files are missing or ffprobe fails.
+    """
+    if not timeline.output_path:
+        raise ValueError("Timeline must have output_path set")
+
+    validate_timeline_files(timeline)
+
+    avatar_entries = [e for e in timeline.entries if e.type == "avatar"]
+    screencast_entries = [e for e in timeline.entries if e.type == "screencast"]
+
+    inputs: List[str] = []
+    audio_presence = []
+    for entry in avatar_entries:
+        inputs.extend(["-i", str(entry.file)])
+        audio_presence.append(has_audio_stream(entry.file))
+    for entry in screencast_entries:
+        inputs.extend(["-i", str(entry.file)])
+
+    filter_complex = build_ffmpeg_filter_overlay(timeline, config, audio_presence=audio_presence)
+
+    output_cfg = config.output
+    output_args = [
+        "-map",
+        "[vout]",
+        "-map",
+        "[aout]",
+        "-c:v",
+        output_cfg.codec,
+        "-preset",
+        output_cfg.preset,
+        "-crf",
+        str(output_cfg.crf),
+        "-pix_fmt",
+        "yuv420p",
+        "-r",
+        str(output_cfg.fps),
+        "-c:a",
+        config.audio.codec,
+        "-b:a",
+        config.audio.bitrate,
+        "-movflags",
+        "+faststart",
+        "-y",
+        str(timeline.output_path),
+    ]
+
+    return ["ffmpeg"] + inputs + ["-filter_complex", filter_complex] + output_args
+
+
+def format_ffmpeg_cmd(cmd: List[str]) -> str:
+    """Format an FFmpeg command for display."""
+    return shlex.join(cmd)
+
+
+def compose_video_with_progress(
+    timeline: Timeline,
+    config: Config,
+    progress_callback: Callable[[float], None],
+) -> Path:
+    """Compose video with progress reporting.
+
+    Uses ffmpeg -progress pipe:1 to parse progress and report via callback.
+
+    Args:
+        timeline: Composition timeline.
+        config: UGCKit configuration.
+        progress_callback: Called with float 0.0-1.0 as rendering progresses.
+
+    Returns:
+        Path to output video.
+
+    Raises:
+        ValueError: If timeline has no output_path.
+        FFmpegError: If FFmpeg fails.
+    """
+    cmd = build_ffmpeg_cmd(timeline, config)
+
+    # Insert progress flags before output path
+    # Replace -y with progress args + -y
+    idx = cmd.index("-y")
+    cmd[idx:idx] = ["-progress", "pipe:1", "-nostats"]
+
+    timeline.output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    total_us = timeline.total_duration * 1_000_000
+
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    try:
+        for line in proc.stdout:
+            line = line.strip()
+            if line.startswith("out_time_us="):
+                try:
+                    current_us = int(line.split("=", 1)[1])
+                    progress = min(current_us / total_us, 1.0) if total_us > 0 else 0.0
+                    progress_callback(progress)
+                except (ValueError, ZeroDivisionError):
+                    pass
+            elif line == "progress=end":
+                progress_callback(1.0)
+
+        proc.wait()
+    except Exception:
+        proc.kill()
+        raise
+
+    if proc.returncode != 0:
+        stderr = proc.stderr.read() if proc.stderr else ""
+        raise FFmpegError(f"FFmpeg failed: {stderr}")
 
     return timeline.output_path

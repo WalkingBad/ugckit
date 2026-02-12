@@ -8,7 +8,13 @@ from typing import Optional, Tuple
 
 import click
 
-from ugckit.composer import FFmpegError, build_timeline, compose_video, format_timeline
+from ugckit.composer import (
+    FFmpegError,
+    build_timeline,
+    compose_video,
+    format_ffmpeg_cmd,
+    format_timeline,
+)
 from ugckit.config import load_config
 from ugckit.parser import load_script, parse_scripts_directory
 
@@ -34,10 +40,14 @@ def main():
 @click.option(
     "--avatars",
     "-a",
-    required=True,
     multiple=True,
     type=click.Path(exists=True, path_type=Path),
     help="Avatar video files (one per segment, in order)",
+)
+@click.option(
+    "--avatar-dir",
+    type=click.Path(exists=True, path_type=Path),
+    help="Directory containing avatar .mp4 files (sorted by filename)",
 )
 @click.option(
     "--screencasts",
@@ -47,6 +57,7 @@ def main():
 )
 @click.option(
     "--scripts-dir",
+    "-d",
     type=click.Path(exists=True, path_type=Path),
     help="Directory containing script markdown files",
 )
@@ -82,6 +93,7 @@ def main():
 def compose(
     script: str,
     avatars: Tuple[Path, ...],
+    avatar_dir: Optional[Path],
     screencasts: Optional[Path],
     scripts_dir: Optional[Path],
     output: Optional[Path],
@@ -92,12 +104,16 @@ def compose(
 ):
     """Compose a video from script and avatar clips.
 
-    Example:
-        ugckit compose --script A1_day347 --avatars seg1.mp4 --avatars seg2.mp4
+    Provide avatars via --avatars (one per segment) or --avatar-dir (auto-sorted).
 
-    With dry-run:
-        ugckit compose --script A1_day347 --avatars *.mp4 --dry-run
+    Example:
+        ugckit compose --script A1 --avatars seg1.mp4 --avatars seg2.mp4
+        ugckit compose --script A1 --avatar-dir ./avatars/
     """
+    if not avatars and not avatar_dir:
+        click.echo("Error: provide --avatars or --avatar-dir", err=True)
+        sys.exit(1)
+
     # Load configuration
     cfg = load_config(config)
 
@@ -110,10 +126,7 @@ def compose(
         mode = "overlay"
 
     # Determine screencasts directory
-    if screencasts:
-        screencasts_dir = screencasts
-    else:
-        screencasts_dir = cfg.screencasts_path
+    screencasts_dir = screencasts or cfg.screencasts_path
 
     # Parse script
     try:
@@ -122,8 +135,14 @@ def compose(
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
-    # Keep avatar files in user-specified order
-    avatar_list = list(avatars)
+    # Resolve avatar list
+    if avatar_dir:
+        avatar_list = sorted(avatar_dir.glob("*.mp4"))
+        if not avatar_list:
+            click.echo(f"Error: no .mp4 files in {avatar_dir}", err=True)
+            sys.exit(1)
+    else:
+        avatar_list = list(avatars)
 
     if len(avatar_list) < len(parsed_script.segments):
         click.echo(
@@ -159,8 +178,9 @@ def compose(
     if dry_run:
         click.echo("Dry run - no video will be rendered")
         click.echo()
-        # Show FFmpeg command
-        compose_video(timeline, cfg, dry_run=True)
+        cmd = compose_video(timeline, cfg, dry_run=True)
+        click.echo("FFmpeg command:")
+        click.echo(format_ffmpeg_cmd(cmd))
         return
 
     # Compose video
@@ -241,6 +261,121 @@ def show_script(script: str, scripts_dir: Optional[Path]):
         click.echo(f"  [{seg.id}] ({seg.duration:.1f}s) {seg.text[:60]}{suffix}")
         for sc in seg.screencasts:
             click.echo(f"       └─ screencast: {sc.file} @ {sc.start}s-{sc.end}s")
+
+
+@main.command()
+@click.option(
+    "--scripts-dir",
+    "-d",
+    type=click.Path(exists=True, path_type=Path),
+    required=True,
+    help="Directory containing script markdown files",
+)
+@click.option(
+    "--avatar-dir",
+    type=click.Path(exists=True, path_type=Path),
+    required=True,
+    help="Directory containing avatar .mp4 files (matched by script ID prefix)",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path),
+    help="Output directory",
+)
+@click.option(
+    "--config",
+    type=click.Path(exists=True, path_type=Path),
+    help="Path to config YAML file",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show timelines and FFmpeg commands without rendering",
+)
+def batch(
+    scripts_dir: Path,
+    avatar_dir: Path,
+    output: Optional[Path],
+    config: Optional[Path],
+    dry_run: bool,
+):
+    """Batch compose videos for all scripts with matching avatars.
+
+    Avatar files are matched by script ID prefix (e.g., A1_seg1.mp4 -> script A1).
+
+    Example:
+        ugckit batch --scripts-dir ./scripts/ --avatar-dir ./avatars/ --dry-run
+    """
+    cfg = load_config(config)
+    scripts = parse_scripts_directory(scripts_dir)
+
+    if not scripts:
+        click.echo("No scripts found", err=True)
+        sys.exit(1)
+
+    # Collect all avatar files
+    all_avatars = sorted(avatar_dir.glob("*.mp4"))
+    if not all_avatars:
+        click.echo(f"No .mp4 files in {avatar_dir}", err=True)
+        sys.exit(1)
+
+    output_dir = output or cfg.output_path
+    screencasts_dir = cfg.screencasts_path
+
+    success = 0
+    errors = 0
+
+    for script in scripts:
+        sid = script.script_id.upper()
+
+        # Match avatars by script ID prefix (e.g., A1_seg1.mp4)
+        matched = [f for f in all_avatars if f.stem.upper().startswith(sid)]
+
+        # If no prefix match, try all avatars (single-script batch)
+        if not matched and len(scripts) == 1:
+            matched = all_avatars
+
+        if not matched:
+            click.echo(f"  [{script.script_id}] SKIP - no matching avatars")
+            continue
+
+        matched.sort()
+        output_path = output_dir / f"{script.script_id}.mp4"
+
+        click.echo(f"  [{script.script_id}] {script.title} ({len(matched)} clips)")
+
+        try:
+            timeline = build_timeline(
+                script=script,
+                avatar_clips=matched,
+                screencasts_dir=screencasts_dir,
+                output_path=output_path,
+            )
+        except (ValueError, FFmpegError) as e:
+            click.echo(f"  [{script.script_id}] ERROR: {e}", err=True)
+            errors += 1
+            continue
+
+        if dry_run:
+            click.echo(format_timeline(timeline))
+            cmd = compose_video(timeline, cfg, dry_run=True)
+            click.echo("FFmpeg command:")
+            click.echo(format_ffmpeg_cmd(cmd))
+            click.echo()
+            success += 1
+            continue
+
+        try:
+            result_path = compose_video(timeline, cfg, dry_run=False)
+            click.echo(f"  [{script.script_id}] OK -> {result_path}")
+            success += 1
+        except (ValueError, FFmpegError) as e:
+            click.echo(f"  [{script.script_id}] FAIL: {e}", err=True)
+            errors += 1
+
+    click.echo()
+    click.echo(f"Batch complete: {success} ok, {errors} errors")
 
 
 if __name__ == "__main__":
