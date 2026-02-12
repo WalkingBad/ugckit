@@ -9,7 +9,10 @@ import pytest
 
 from ugckit.composer import (
     FFmpegError,
+    _detect_composition_mode,  # noqa: F401
+    build_ffmpeg_filter_greenscreen,  # noqa: F401
     build_ffmpeg_filter_overlay,
+    build_ffmpeg_filter_split,  # noqa: F401
     build_timeline,
     compose_video,
     compose_video_with_progress,
@@ -19,9 +22,12 @@ from ugckit.composer import (
     has_audio_stream,
     position_to_overlay_coords,
     validate_timeline_files,
+    wrap_with_post_processing,  # noqa: F401
 )
 from ugckit.models import (
+    CompositionMode,
     Config,
+    MusicConfig,  # noqa: F401
     Position,
     Script,
     Segment,
@@ -317,7 +323,6 @@ class TestComposeVideoWithProgress:
 class TestBuildFfmpegFilterPip:
     def _make_pip_timeline(self, tmp_path) -> Timeline:
         """Create a timeline with PiP screencast entries."""
-        from ugckit.models import CompositionMode
 
         entries = [
             TimelineEntry(start=0, end=8, type="avatar", file=tmp_path / "a.mp4", parent_segment=1),
@@ -370,7 +375,7 @@ class TestBuildFfmpegFilterPip:
 class TestBuildTimelinePreservesMode:
     def test_screencast_mode_propagated(self, tmp_path):
         """build_timeline should copy screencast mode to TimelineEntry."""
-        from ugckit.models import CompositionMode, ScreencastOverlay
+        from ugckit.models import ScreencastOverlay
 
         v1 = make_fake_video(tmp_path / "seg1.mp4", duration=3.0)
         sc_dir = tmp_path / "screencasts"
@@ -401,3 +406,226 @@ class TestBuildTimelinePreservesMode:
         sc_entries = [e for e in tl.entries if e.type == "screencast"]
         assert len(sc_entries) == 1
         assert sc_entries[0].composition_mode == CompositionMode.PIP
+
+
+# ── Split screen tests ─────────────────────────────────────────────
+
+
+class TestBuildFfmpegFilterSplit:
+    def _make_split_timeline(self, tmp_path) -> Timeline:
+        entries = [
+            TimelineEntry(start=0, end=8, type="avatar", file=tmp_path / "a.mp4", parent_segment=1),
+            TimelineEntry(
+                start=2,
+                end=6,
+                type="screencast",
+                file=tmp_path / "sc.mp4",
+                parent_segment=1,
+                composition_mode=CompositionMode.SPLIT,
+            ),
+        ]
+        return Timeline(
+            script_id="S1",
+            total_duration=8.0,
+            entries=entries,
+            output_path=tmp_path / "out.mp4",
+        )
+
+    def test_contains_hstack(self, tmp_path):
+        tl = self._make_split_timeline(tmp_path)
+        cfg = Config()
+        result = build_ffmpeg_filter_split(tl, cfg, audio_presence=[True])
+        assert "hstack" in result
+        assert "split=2" in result  # stream must be duplicated
+        assert "[vout]" in result
+        assert "[aout]" in result
+
+    def test_avatar_side_left(self, tmp_path):
+        tl = self._make_split_timeline(tmp_path)
+        cfg = Config()
+        cfg.composition.split.avatar_side = "left"
+        result = build_ffmpeg_filter_split(tl, cfg, audio_presence=[True])
+        assert "hstack" in result
+
+    def test_avatar_side_right(self, tmp_path):
+        tl = self._make_split_timeline(tmp_path)
+        cfg = Config()
+        cfg.composition.split.avatar_side = "right"
+        result = build_ffmpeg_filter_split(tl, cfg, audio_presence=[True])
+        assert "hstack" in result
+
+    def test_no_screencasts(self, tmp_path):
+        tl = make_timeline([tmp_path / "a.mp4"], tmp_path / "out.mp4")
+        cfg = Config()
+        result = build_ffmpeg_filter_split(tl, cfg, audio_presence=[True])
+        assert "[base]null[vout]" in result
+
+
+# ── Green screen tests ─────────────────────────────────────────────
+
+
+class TestBuildFfmpegFilterGreenscreen:
+    def _make_gs_timeline(self, tmp_path) -> Timeline:
+        entries = [
+            TimelineEntry(start=0, end=8, type="avatar", file=tmp_path / "a.mp4", parent_segment=1),
+            TimelineEntry(
+                start=2,
+                end=6,
+                type="screencast",
+                file=tmp_path / "sc.mp4",
+                parent_segment=1,
+                composition_mode=CompositionMode.GREENSCREEN,
+            ),
+        ]
+        return Timeline(
+            script_id="G1",
+            total_duration=8.0,
+            entries=entries,
+            output_path=tmp_path / "out.mp4",
+        )
+
+    def test_has_overlay(self, tmp_path):
+        tl = self._make_gs_timeline(tmp_path)
+        cfg = Config()
+        result = build_ffmpeg_filter_greenscreen(tl, cfg, audio_presence=[True])
+        assert "overlay" in result.lower()
+        assert "[vout]" in result
+        assert "[aout]" in result
+
+    def test_with_transparent_avatars(self, tmp_path):
+        tl = self._make_gs_timeline(tmp_path)
+        cfg = Config()
+        ta = [tmp_path / "ta_0.webm"]
+        result = build_ffmpeg_filter_greenscreen(
+            tl, cfg, audio_presence=[True], transparent_avatars=ta
+        )
+        # Should reference the transparent avatar input
+        assert "ta_" in result
+
+
+# ── Post-processing wrapper tests ──────────────────────────────────
+
+
+class TestWrapWithPostProcessing:
+    def test_no_op_returns_same(self):
+        original = "[0:v]null[vout];[0:a]anull[aout]"
+        result = wrap_with_post_processing(original)
+        assert result == original
+
+    def test_subtitles_only(self, tmp_path):
+        original = "[0:v]null[vout];[0:a]anull[aout]"
+        sub_file = tmp_path / "subs.ass"
+        sub_file.write_text("dummy")
+        result = wrap_with_post_processing(original, subtitle_file=sub_file)
+        assert "[vout_pre]" in result
+        assert "ass=" in result
+        assert "[aout]" in result  # audio unchanged
+
+    def test_music_only(self):
+        original = "[0:v]null[vout];[0:a]anull[aout]"
+        music_cfg = MusicConfig(enabled=True, volume=0.2, fade_out_duration=1.5, loop=True)
+        result = wrap_with_post_processing(
+            original, music_input_index=1, music_config=music_cfg, total_duration=10.0
+        )
+        assert "[aout_pre]" in result
+        assert "aloop" in result
+        assert "amix" in result
+        assert "[vout]" in result  # video unchanged
+
+    def test_music_no_loop(self):
+        original = "[0:v]null[vout];[0:a]anull[aout]"
+        music_cfg = MusicConfig(enabled=True, volume=0.1, fade_out_duration=2.0, loop=False)
+        result = wrap_with_post_processing(
+            original, music_input_index=2, music_config=music_cfg, total_duration=8.0
+        )
+        assert "aloop" not in result
+        assert "atrim" in result
+        assert "amix" in result
+
+    def test_both_subtitles_and_music(self, tmp_path):
+        original = "[0:v]null[vout];[0:a]anull[aout]"
+        sub_file = tmp_path / "subs.ass"
+        sub_file.write_text("dummy")
+        music_cfg = MusicConfig(enabled=True, volume=0.15)
+        result = wrap_with_post_processing(
+            original,
+            subtitle_file=sub_file,
+            music_input_index=1,
+            music_config=music_cfg,
+            total_duration=10.0,
+        )
+        assert "ass=" in result
+        assert "amix" in result
+
+
+# ── Mode detection tests ───────────────────────────────────────────
+
+
+class TestDetectCompositionMode:
+    def test_overlay_default(self, tmp_path):
+        tl = make_timeline([tmp_path / "a.mp4"], tmp_path / "out.mp4")
+        assert _detect_composition_mode(tl) == CompositionMode.OVERLAY
+
+    def test_pip_detected(self, tmp_path):
+        entries = [
+            TimelineEntry(start=0, end=8, type="avatar", file=tmp_path / "a.mp4"),
+            TimelineEntry(
+                start=2,
+                end=6,
+                type="screencast",
+                file=tmp_path / "sc.mp4",
+                composition_mode=CompositionMode.PIP,
+            ),
+        ]
+        tl = Timeline(script_id="P", total_duration=8, entries=entries)
+        assert _detect_composition_mode(tl) == CompositionMode.PIP
+
+    def test_split_detected(self, tmp_path):
+        entries = [
+            TimelineEntry(start=0, end=8, type="avatar", file=tmp_path / "a.mp4"),
+            TimelineEntry(
+                start=2,
+                end=6,
+                type="screencast",
+                file=tmp_path / "sc.mp4",
+                composition_mode=CompositionMode.SPLIT,
+            ),
+        ]
+        tl = Timeline(script_id="S", total_duration=8, entries=entries)
+        assert _detect_composition_mode(tl) == CompositionMode.SPLIT
+
+    def test_greenscreen_detected(self, tmp_path):
+        entries = [
+            TimelineEntry(start=0, end=8, type="avatar", file=tmp_path / "a.mp4"),
+            TimelineEntry(
+                start=2,
+                end=6,
+                type="screencast",
+                file=tmp_path / "sc.mp4",
+                composition_mode=CompositionMode.GREENSCREEN,
+            ),
+        ]
+        tl = Timeline(script_id="G", total_duration=8, entries=entries)
+        assert _detect_composition_mode(tl) == CompositionMode.GREENSCREEN
+
+    def test_greenscreen_takes_priority(self, tmp_path):
+        """When mixed modes, greenscreen > pip > split."""
+        entries = [
+            TimelineEntry(start=0, end=8, type="avatar", file=tmp_path / "a.mp4"),
+            TimelineEntry(
+                start=1,
+                end=3,
+                type="screencast",
+                file=tmp_path / "s1.mp4",
+                composition_mode=CompositionMode.PIP,
+            ),
+            TimelineEntry(
+                start=4,
+                end=6,
+                type="screencast",
+                file=tmp_path / "s2.mp4",
+                composition_mode=CompositionMode.GREENSCREEN,
+            ),
+        ]
+        tl = Timeline(script_id="M", total_duration=8, entries=entries)
+        assert _detect_composition_mode(tl) == CompositionMode.GREENSCREEN

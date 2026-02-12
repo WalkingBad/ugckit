@@ -14,6 +14,8 @@ class CompositionMode(str, Enum):
 
     OVERLAY = "overlay"  # Avatar as background, screencast in corner
     PIP = "pip"  # Screencast fullscreen, head cutout in corner
+    SPLIT = "split"  # Avatar left, screencast right (50/50)
+    GREENSCREEN = "greenscreen"  # Avatar bg removed, composite over screencast
 
 
 class Position(str, Enum):
@@ -91,6 +93,44 @@ class PipConfig(BaseModel):
     head_margin: int = 30
 
 
+class SplitConfig(BaseModel):
+    """Configuration for split screen mode."""
+
+    avatar_side: str = "left"  # "left" or "right"
+    split_ratio: float = 0.5  # 0.5 = 50/50
+
+
+class GreenScreenConfig(BaseModel):
+    """Configuration for green screen mode."""
+
+    avatar_scale: float = 0.8
+    avatar_position: Position = Position.BOTTOM_RIGHT
+    avatar_margin: int = 30
+
+
+class SubtitleConfig(BaseModel):
+    """Configuration for auto-subtitles."""
+
+    enabled: bool = False
+    font_name: str = "Arial"
+    font_size: int = 48
+    outline_width: int = 3
+    position_y: int = 200  # pixels from bottom
+    max_words_per_line: int = 5
+    highlight_color: str = "&H0000FFFF"  # ASS yellow highlight
+    whisper_model: str = "base"
+
+
+class MusicConfig(BaseModel):
+    """Configuration for background music."""
+
+    enabled: bool = False
+    file: Optional[Path] = None
+    volume: float = 0.15  # 0.0-1.0
+    fade_out_duration: float = 2.0
+    loop: bool = True
+
+
 class OutputConfig(BaseModel):
     """Output video configuration."""
 
@@ -115,6 +155,8 @@ class CompositionConfig(BaseModel):
 
     overlay: OverlayConfig = Field(default_factory=OverlayConfig)
     pip: PipConfig = Field(default_factory=PipConfig)
+    split: SplitConfig = Field(default_factory=SplitConfig)
+    greenscreen: GreenScreenConfig = Field(default_factory=GreenScreenConfig)
 
 
 class Config(BaseModel):
@@ -123,6 +165,8 @@ class Config(BaseModel):
     composition: CompositionConfig = Field(default_factory=CompositionConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
     audio: AudioConfig = Field(default_factory=AudioConfig)
+    subtitles: SubtitleConfig = Field(default_factory=SubtitleConfig)
+    music: MusicConfig = Field(default_factory=MusicConfig)
     screencasts_path: Path = Path("./assets/screencasts")
     output_path: Path = Path("./assets/output")
 

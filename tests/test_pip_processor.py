@@ -138,3 +138,14 @@ class TestCreateHeadEnhanced:
         # This will raise ImportError since mediapipe/rembg likely not installed
         with pytest.raises((ImportError, PipProcessingError)):
             _create_head_enhanced(avatar, tmp_path / "head.webm", config, 1080)
+
+
+class TestCreateTransparentAvatar:
+    def test_raises_without_rembg(self, tmp_path):
+        """create_transparent_avatar should raise ImportError without rembg."""
+        from ugckit.pip_processor import create_transparent_avatar
+
+        avatar = make_fake_video(tmp_path / "avatar.mp4", duration=1.0)
+        # rembg likely not installed in test env
+        with pytest.raises((ImportError, PipProcessingError)):
+            create_transparent_avatar(avatar, tmp_path / "ta.webm")

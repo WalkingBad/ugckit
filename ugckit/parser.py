@@ -46,6 +46,20 @@ def estimate_duration(text: str) -> float:
     return words / WORDS_PER_SECOND
 
 
+_MODE_MAP = {
+    "pip": CompositionMode.PIP,
+    "split": CompositionMode.SPLIT,
+    "greenscreen": CompositionMode.GREENSCREEN,
+}
+
+
+def _parse_mode_str(mode_str: Optional[str]) -> CompositionMode:
+    """Parse a mode string from a screencast tag."""
+    if mode_str:
+        return _MODE_MAP.get(mode_str.lower(), CompositionMode.OVERLAY)
+    return CompositionMode.OVERLAY
+
+
 def parse_screencast_tags(text: str) -> List[ScreencastOverlay]:
     """Parse all screencast tags from text.
 
@@ -70,9 +84,7 @@ def parse_screencast_tags(text: str) -> List[ScreencastOverlay]:
         end_keyword = match.group(3)
         mode_str = match.group(4)
 
-        mode = CompositionMode.OVERLAY
-        if mode_str and mode_str.lower() == "pip":
-            mode = CompositionMode.PIP
+        mode = _parse_mode_str(mode_str)
 
         if "." not in filename:
             filename = f"{filename}.mp4"
@@ -102,9 +114,7 @@ def parse_screencast_tags(text: str) -> List[ScreencastOverlay]:
         if end <= start:
             continue
 
-        mode = CompositionMode.OVERLAY
-        if mode_str and mode_str.lower() == "pip":
-            mode = CompositionMode.PIP
+        mode = _parse_mode_str(mode_str)
 
         if "." not in filename:
             filename = f"{filename}.mp4"

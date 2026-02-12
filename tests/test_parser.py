@@ -278,3 +278,33 @@ class TestKeywordScreencastParsing:
         result = parse_screencast_tags(text)
         assert len(result) == 1
         assert result[0].file == "app.mp4"
+
+
+# ── Split/Greenscreen mode parsing (Phase 4) ────────────────────────
+
+
+class TestNewModeParsing:
+    def test_split_mode(self):
+        text = "[screencast: demo @ 1.5-5.0 mode:split]"
+        result = parse_screencast_tags(text)
+        assert len(result) == 1
+        assert result[0].mode.value == "split"
+
+    def test_greenscreen_mode(self):
+        text = "[screencast: demo @ 1.5-5.0 mode:greenscreen]"
+        result = parse_screencast_tags(text)
+        assert len(result) == 1
+        assert result[0].mode.value == "greenscreen"
+
+    def test_keyword_with_split_mode(self):
+        text = '[screencast: app @ word:"start"-word:"end" mode:split]'
+        result = parse_screencast_tags(text)
+        assert len(result) == 1
+        assert result[0].mode.value == "split"
+        assert result[0].start_keyword == "start"
+
+    def test_unknown_mode_defaults_overlay(self):
+        text = "[screencast: demo @ 1.5-5.0 mode:unknown]"
+        result = parse_screencast_tags(text)
+        assert len(result) == 1
+        assert result[0].mode.value == "overlay"

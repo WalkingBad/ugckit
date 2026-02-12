@@ -60,6 +60,46 @@ def _apply_sync(parsed_script, avatar_list: list[Path], model_name: str):
         return parsed_script
 
 
+def _prepare_greenscreen(
+    avatar_list: list[Path],
+    config,
+) -> list[Path]:
+    """Pre-process avatar clips for green screen mode: remove backgrounds."""
+    from ugckit.pip_processor import PipProcessingError, create_transparent_avatar
+
+    gs_cfg = config.composition.greenscreen
+    transparent_avatars = []
+    tmp_dir = Path(tempfile.mkdtemp(prefix="ugckit_gs_"))
+
+    for i, avatar in enumerate(avatar_list):
+        out = tmp_dir / f"transparent_{i}.webm"
+        try:
+            ta_path = create_transparent_avatar(
+                avatar,
+                out,
+                scale=gs_cfg.avatar_scale,
+                output_width=config.output.resolution[0],
+            )
+            transparent_avatars.append(ta_path)
+            click.echo(f"  Transparent avatar {i+1}/{len(avatar_list)}: {ta_path.name}")
+        except (ImportError, PipProcessingError) as e:
+            click.echo(f"  Warning: green screen failed for {avatar.name}: {e}", err=True)
+            return []
+
+    return transparent_avatars
+
+
+def _generate_subtitles(timeline, avatar_list: list[Path], config):
+    """Generate ASS subtitle file from avatar speech."""
+    try:
+        from ugckit.subtitles import generate_subtitle_file
+
+        return generate_subtitle_file(timeline, avatar_list, config)
+    except Exception as e:
+        click.echo(f"Warning: subtitle generation failed: {e}", err=True)
+        return None
+
+
 @click.group()
 @click.version_option(version="0.1.0")
 def main():
@@ -116,7 +156,7 @@ def main():
 @click.option(
     "--mode",
     "-m",
-    type=click.Choice(["overlay", "pip"]),
+    type=click.Choice(["overlay", "pip", "split", "greenscreen"]),
     default="overlay",
     help="Composition mode",
 )
@@ -144,6 +184,65 @@ def main():
     help="Whisper model size for Smart Sync",
 )
 @click.option(
+    "--avatar-side",
+    type=click.Choice(["left", "right"]),
+    default="left",
+    help="Avatar side for split screen mode",
+)
+@click.option(
+    "--split-ratio",
+    type=float,
+    default=0.5,
+    help="Split ratio (0.3-0.7, default 0.5 = 50/50)",
+)
+@click.option(
+    "--gs-avatar-scale",
+    type=float,
+    default=0.8,
+    help="Avatar scale for green screen mode (0.3-1.0)",
+)
+@click.option(
+    "--gs-avatar-position",
+    type=click.Choice(["top-left", "top-right", "bottom-left", "bottom-right"]),
+    default="bottom-right",
+    help="Avatar position for green screen mode",
+)
+@click.option(
+    "--music",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Background music file (mp3/wav/m4a)",
+)
+@click.option(
+    "--music-volume",
+    type=float,
+    default=0.15,
+    help="Music volume (0.0-1.0, default 0.15)",
+)
+@click.option(
+    "--music-fade-out",
+    type=float,
+    default=2.0,
+    help="Music fade-out duration in seconds",
+)
+@click.option(
+    "--subtitles",
+    is_flag=True,
+    help="Enable auto-subtitles (Whisper transcription)",
+)
+@click.option(
+    "--subtitle-font-size",
+    type=int,
+    default=48,
+    help="Subtitle font size",
+)
+@click.option(
+    "--subtitle-model",
+    type=click.Choice(["tiny", "base", "small", "medium", "large"]),
+    default="base",
+    help="Whisper model for subtitle transcription",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Show timeline and FFmpeg command without rendering",
@@ -161,6 +260,16 @@ def compose(
     head_scale: float,
     sync: bool,
     sync_model: str,
+    avatar_side: str,
+    split_ratio: float,
+    gs_avatar_scale: float,
+    gs_avatar_position: str,
+    music: Optional[Path],
+    music_volume: float,
+    music_fade_out: float,
+    subtitles: bool,
+    subtitle_font_size: int,
+    subtitle_model: str,
     dry_run: bool,
 ):
     """Compose a video from script and avatar clips.
@@ -208,11 +317,31 @@ def compose(
         click.echo("Running Smart Sync (Whisper)...")
         parsed_script = _apply_sync(parsed_script, avatar_list, sync_model)
 
-    # PiP mode: override screencast modes if --mode pip
-    if mode == "pip":
+    # Override screencast modes based on --mode
+    mode_enum = CompositionMode(mode)
+    if mode_enum != CompositionMode.OVERLAY:
         for seg in parsed_script.segments:
             for sc in seg.screencasts:
-                sc.mode = CompositionMode.PIP
+                sc.mode = mode_enum
+
+    # Apply split/greenscreen config from CLI
+    cfg.composition.split.avatar_side = avatar_side
+    cfg.composition.split.split_ratio = split_ratio
+    cfg.composition.greenscreen.avatar_scale = gs_avatar_scale
+    cfg.composition.greenscreen.avatar_position = Position(gs_avatar_position)
+
+    # Music config
+    if music:
+        cfg.music.enabled = True
+        cfg.music.file = music
+        cfg.music.volume = music_volume
+        cfg.music.fade_out_duration = music_fade_out
+
+    # Subtitle config
+    if subtitles:
+        cfg.subtitles.enabled = True
+        cfg.subtitles.font_size = subtitle_font_size
+        cfg.subtitles.whisper_model = subtitle_model
 
     # Determine output path
     if output:
@@ -235,13 +364,27 @@ def compose(
         click.echo(f"Error building timeline: {e}", err=True)
         sys.exit(1)
 
-    # Pre-process head videos for PiP mode
+    # Pre-process for PiP mode
     head_videos = None
     if mode == "pip":
         click.echo("Generating head videos for PiP mode...")
         head_videos = _prepare_pip(avatar_list, cfg, head_position, head_scale)
         if not head_videos:
             click.echo("Warning: PiP head extraction failed, using overlay mode", err=True)
+
+    # Pre-process for green screen mode
+    transparent_avatars = None
+    if mode == "greenscreen":
+        click.echo("Generating transparent avatars for green screen mode...")
+        transparent_avatars = _prepare_greenscreen(avatar_list, cfg)
+        if not transparent_avatars:
+            click.echo("Warning: green screen processing failed, using overlay mode", err=True)
+
+    # Generate subtitles
+    subtitle_file = None
+    if subtitles:
+        click.echo("Generating subtitles (Whisper)...")
+        subtitle_file = _generate_subtitles(timeline, avatar_list, cfg)
 
     # Display timeline
     click.echo(format_timeline(timeline))
@@ -250,7 +393,15 @@ def compose(
     if dry_run:
         click.echo("Dry run - no video will be rendered")
         click.echo()
-        cmd = compose_video(timeline, cfg, dry_run=True, head_videos=head_videos)
+        cmd = compose_video(
+            timeline,
+            cfg,
+            dry_run=True,
+            head_videos=head_videos,
+            transparent_avatars=transparent_avatars,
+            subtitle_file=subtitle_file,
+            music_file=music,
+        )
         click.echo("FFmpeg command:")
         click.echo(format_ffmpeg_cmd(cmd))
         return
@@ -258,7 +409,15 @@ def compose(
     # Compose video
     click.echo("Composing video...")
     try:
-        result_path = compose_video(timeline, cfg, dry_run=False, head_videos=head_videos)
+        result_path = compose_video(
+            timeline,
+            cfg,
+            dry_run=False,
+            head_videos=head_videos,
+            transparent_avatars=transparent_avatars,
+            subtitle_file=subtitle_file,
+            music_file=music,
+        )
         click.echo(f"Done! Output: {result_path}")
     except (ValueError, FFmpegError) as e:
         click.echo(f"Error composing video: {e}", err=True)

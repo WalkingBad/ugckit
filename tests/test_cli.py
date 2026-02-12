@@ -322,3 +322,130 @@ class TestBatch:
         )
         assert result.exit_code != 0
         assert "No .mp4 files" in result.output
+
+
+# ── New mode/option tests ──────────────────────────────────────────
+
+
+class TestComposeNewModes:
+    def test_split_mode_dry_run(self, runner, setup_workspace):
+        scripts_dir, avatar_dir = setup_workspace
+        make_fake_video(avatar_dir / "seg1.mp4", duration=2.0)
+        make_fake_video(avatar_dir / "seg2.mp4", duration=2.0)
+
+        result = runner.invoke(
+            main,
+            [
+                "compose",
+                "-s",
+                "T1",
+                "--avatar-dir",
+                str(avatar_dir),
+                "-d",
+                str(scripts_dir),
+                "--mode",
+                "split",
+                "--dry-run",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "ffmpeg" in result.output
+
+    def test_greenscreen_mode_dry_run(self, runner, setup_workspace):
+        scripts_dir, avatar_dir = setup_workspace
+        make_fake_video(avatar_dir / "seg1.mp4", duration=2.0)
+        make_fake_video(avatar_dir / "seg2.mp4", duration=2.0)
+
+        result = runner.invoke(
+            main,
+            [
+                "compose",
+                "-s",
+                "T1",
+                "--avatar-dir",
+                str(avatar_dir),
+                "-d",
+                str(scripts_dir),
+                "--mode",
+                "greenscreen",
+                "--dry-run",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "ffmpeg" in result.output
+
+    def test_music_option_dry_run(self, runner, setup_workspace, tmp_path):
+        scripts_dir, avatar_dir = setup_workspace
+        make_fake_video(avatar_dir / "seg1.mp4", duration=2.0)
+        make_fake_video(avatar_dir / "seg2.mp4", duration=2.0)
+
+        # Create a fake music file
+        music_file = tmp_path / "bg.mp3"
+        music_file.touch()
+
+        result = runner.invoke(
+            main,
+            [
+                "compose",
+                "-s",
+                "T1",
+                "--avatar-dir",
+                str(avatar_dir),
+                "-d",
+                str(scripts_dir),
+                "--music",
+                str(music_file),
+                "--music-volume",
+                "0.2",
+                "--dry-run",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "ffmpeg" in result.output
+
+    def test_subtitles_flag_dry_run(self, runner, setup_workspace):
+        scripts_dir, avatar_dir = setup_workspace
+        make_fake_video(avatar_dir / "seg1.mp4", duration=2.0)
+        make_fake_video(avatar_dir / "seg2.mp4", duration=2.0)
+
+        result = runner.invoke(
+            main,
+            [
+                "compose",
+                "-s",
+                "T1",
+                "--avatar-dir",
+                str(avatar_dir),
+                "-d",
+                str(scripts_dir),
+                "--subtitles",
+                "--dry-run",
+            ],
+        )
+        # May warn about whisper not installed but should still succeed
+        assert result.exit_code == 0
+
+    def test_avatar_side_option(self, runner, setup_workspace):
+        scripts_dir, avatar_dir = setup_workspace
+        make_fake_video(avatar_dir / "seg1.mp4", duration=2.0)
+
+        result = runner.invoke(
+            main,
+            [
+                "compose",
+                "-s",
+                "T1",
+                "--avatar-dir",
+                str(avatar_dir),
+                "-d",
+                str(scripts_dir),
+                "--mode",
+                "split",
+                "--avatar-side",
+                "right",
+                "--split-ratio",
+                "0.4",
+                "--dry-run",
+            ],
+        )
+        assert result.exit_code == 0

@@ -5,17 +5,23 @@ composition:
     scale: 0.4              # 40% of screen width
     position: bottom-right  # top-left, top-right, bottom-left, bottom-right
     margin: 50              # pixels from edge
-    # rotation: 5           # (Phase 2) degrees tilt
-    # shadow: true          # (Phase 2) drop shadow effect
 
-  # pip:                    # (Phase 2) PiP mode settings
-  #   head_scale: 0.25      # 25% of screen width
-  #   head_position: top-right
-  #   head_margin: 30
+  pip:
+    head_scale: 0.25        # 25% of screen width
+    head_position: top-right
+    head_margin: 30
+
+  split:
+    avatar_side: left       # "left" or "right"
+    split_ratio: 0.5        # 0.5 = 50/50
+
+  greenscreen:
+    avatar_scale: 0.8       # avatar size relative to output width
+    avatar_position: bottom-right
+    avatar_margin: 30
 
 output:
   fps: 30
-  # bitrate: "8M"           # (not used, crf controls quality)
   resolution: [1080, 1920]  # 9:16 vertical
   codec: libx264
   preset: medium            # ultrafast, fast, medium, slow
@@ -26,6 +32,22 @@ audio:
   target_loudness: -14      # LUFS for loudnorm
   codec: aac                # audio codec
   bitrate: 192k             # audio bitrate
+
+subtitles:
+  enabled: false
+  font_name: Arial
+  font_size: 48
+  outline_width: 3
+  position_y: 200           # pixels from bottom
+  max_words_per_line: 5
+  highlight_color: "&H0000FFFF"  # ASS yellow highlight
+  whisper_model: base
+
+music:
+  enabled: false
+  volume: 0.15              # 0.0-1.0
+  fade_out_duration: 2.0    # seconds
+  loop: true
 
 paths:
   screencasts: ./assets/screencasts

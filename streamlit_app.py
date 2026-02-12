@@ -20,7 +20,10 @@ from ugckit.models import CompositionMode, Position
 from ugckit.parser import parse_scripts_directory
 
 st.set_page_config(
-    page_title="UGCKit", page_icon="", layout="wide", initial_sidebar_state="expanded"
+    page_title="UGCKit \u2014 \u0421\u0431\u043e\u0440\u043a\u0430 UGC \u0432\u0438\u0434\u0435\u043e",
+    page_icon="",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 # ---------------------------------------------------------------------------
@@ -624,62 +627,80 @@ def save_uploads(files, target_dir: Path) -> list[Path]:
 with st.sidebar:
     st.markdown(
         '<div class="sidebar-logo">UGCKit</div>'
-        '<div class="sidebar-version">Video Composer v1.0</div>',
+        '<div class="sidebar-version">\u0421\u0431\u043e\u0440\u0449\u0438\u043a \u0432\u0438\u0434\u0435\u043e v1.0</div>',
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="sidebar-section-title">Scripts</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sidebar-section-title">\u0421\u043a\u0440\u0438\u043f\u0442\u044b (.md)</div>',
+        unsafe_allow_html=True,
+    )
     script_files = st.file_uploader(
-        "Скрипты",
+        "\u0421\u043a\u0440\u0438\u043f\u0442\u044b",
         type=["md"],
         accept_multiple_files=True,
-        help='Markdown со скриптами: ### Script A1: "Название"',
+        help=(
+            "Markdown-\u0444\u0430\u0439\u043b\u044b \u0441\u043e \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u044f\u043c\u0438 \u0432\u0438\u0434\u0435\u043e. \u041a\u0430\u0436\u0434\u044b\u0439 \u0444\u0430\u0439\u043b \u043c\u043e\u0436\u0435\u0442 \u0441\u043e\u0434\u0435\u0440\u0436\u0430\u0442\u044c \u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e \u0441\u043a\u0440\u0438\u043f\u0442\u043e\u0432. "
+            '\u0424\u043e\u0440\u043c\u0430\u0442 \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0430: ### Script A1: "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435". '
+            '\u041a\u043b\u0438\u043f\u044b: **Clip 1 (8s):**. \u041e\u0437\u0432\u0443\u0447\u043a\u0430: Says: "\u0422\u0435\u043a\u0441\u0442".'
+        ),
         label_visibility="collapsed",
     )
     if script_files:
         save_uploads(script_files, SCRIPTS_DIR)
         st.markdown(
-            f'<div class="upload-counter">{len(script_files)} loaded</div>',
+            f'<div class="upload-counter">\u0417\u0430\u0433\u0440\u0443\u0436\u0435\u043d\u043e: {len(script_files)}</div>',
             unsafe_allow_html=True,
         )
 
-    st.markdown('<div class="sidebar-section-title">Avatars (.mp4)</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sidebar-section-title">\u0410\u0432\u0430\u0442\u0430\u0440\u044b (.mp4)</div>',
+        unsafe_allow_html=True,
+    )
     avatar_files = st.file_uploader(
-        "Аватары",
+        "\u0410\u0432\u0430\u0442\u0430\u0440\u044b",
         type=["mp4"],
         accept_multiple_files=True,
-        help="AI avatar videos, one per segment",
+        help=(
+            "\u0412\u0438\u0434\u0435\u043e \u0441 AI-\u0430\u0432\u0430\u0442\u0430\u0440\u0430\u043c\u0438 (Higgsfield, HeyGen \u0438 \u0442.\u0434.). "
+            "\u041f\u043e \u043e\u0434\u043d\u043e\u043c\u0443 \u0444\u0430\u0439\u043b\u0443 \u043d\u0430 \u043a\u0430\u0436\u0434\u044b\u0439 \u043a\u043b\u0438\u043f \u0432 \u0441\u043a\u0440\u0438\u043f\u0442\u0435. "
+            "\u041f\u043e\u0440\u044f\u0434\u043e\u043a \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u044f\u0435\u0442\u0441\u044f \u043f\u043e \u0438\u043c\u0435\u043d\u0438 \u0444\u0430\u0439\u043b\u0430 (\u043d\u0430\u043f\u0440. A1_clip1.mp4, A1_clip2.mp4)."
+        ),
         label_visibility="collapsed",
     )
     if avatar_files:
         save_uploads(avatar_files, AVATARS_DIR)
         st.markdown(
-            f'<div class="upload-counter">{len(avatar_files)} loaded</div>',
+            f'<div class="upload-counter">\u0417\u0430\u0433\u0440\u0443\u0436\u0435\u043d\u043e: {len(avatar_files)}</div>',
             unsafe_allow_html=True,
         )
 
     st.markdown(
-        '<div class="sidebar-section-title">Screencasts (.mp4)</div>',
+        '<div class="sidebar-section-title">\u0421\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u044b (.mp4)</div>',
         unsafe_allow_html=True,
     )
     screencast_files = st.file_uploader(
-        "Скринкасты",
+        "\u0421\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u044b",
         type=["mp4"],
         accept_multiple_files=True,
-        help="App screen recordings for overlay",
+        help=(
+            "\u0417\u0430\u043f\u0438\u0441\u0438 \u044d\u043a\u0440\u0430\u043d\u0430 \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u044f \u0434\u043b\u044f \u043d\u0430\u043b\u043e\u0436\u0435\u043d\u0438\u044f \u043d\u0430 \u0432\u0438\u0434\u0435\u043e. "
+            "\u0418\u043c\u044f \u0444\u0430\u0439\u043b\u0430 \u0434\u043e\u043b\u0436\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0430\u0442\u044c \u0441 \u0442\u0435\u0433\u043e\u043c [screencast: \u0438\u043c\u044f_\u0444\u0430\u0439\u043b\u0430 @ ...] \u0432 \u0441\u043a\u0440\u0438\u043f\u0442\u0435. "
+            "\u041f\u043e\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u043b\u044e\u0431\u043e\u0435 \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u2014 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442 \u0431\u0443\u0434\u0435\u0442 \u043c\u0430\u0441\u0448\u0442\u0430\u0431\u0438\u0440\u043e\u0432\u0430\u043d \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438."
+        ),
         label_visibility="collapsed",
     )
     if screencast_files:
         save_uploads(screencast_files, SCREENCASTS_DIR)
         st.markdown(
-            f'<div class="upload-counter">{len(screencast_files)} loaded</div>',
+            f'<div class="upload-counter">\u0417\u0430\u0433\u0440\u0443\u0436\u0435\u043d\u043e: {len(screencast_files)}</div>',
             unsafe_allow_html=True,
         )
 
     st.markdown("---")
     st.markdown(
         '<div style="font-size:.72rem; color:var(--text-muted);">'
-        "Files from disk are also detected automatically."
+        "\u0424\u0430\u0439\u043b\u044b \u0438\u0437 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0445 \u043f\u0430\u043f\u043e\u043a \u0442\u0430\u043a\u0436\u0435 \u043e\u0431\u043d\u0430\u0440\u0443\u0436\u0438\u0432\u0430\u044e\u0442\u0441\u044f \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -692,16 +713,22 @@ all_scripts = parse_scripts_directory(SCRIPTS_DIR)
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
-tab_scripts, tab_compose, tab_settings = st.tabs(["Scripts", "Compose", "Settings"])
+tab_scripts, tab_compose, tab_settings = st.tabs(
+    [
+        "\u0421\u043a\u0440\u0438\u043f\u0442\u044b",
+        "\u0421\u0431\u043e\u0440\u043a\u0430",
+        "\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438",
+    ]
+)
 
 # ---------------------------------------------------------------------------
 # Settings tab (load first so compose uses latest values)
 # ---------------------------------------------------------------------------
 with tab_settings:
     st.markdown(
-        '<div class="hero-badge">Configuration</div>'
-        '<div class="hero-title">Settings</div>'
-        '<div class="hero-subtitle">Fine-tune composition, output, and sync parameters.</div>',
+        '<div class="hero-badge">\u041a\u043e\u043d\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044f</div>'
+        '<div class="hero-title">\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438</div>'
+        '<div class="hero-subtitle">\u0422\u043e\u043d\u043a\u0430\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430 \u043a\u043e\u043c\u043f\u043e\u0437\u0438\u0446\u0438\u0438, \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0430 \u0432\u044b\u0432\u043e\u0434\u0430, \u0437\u0432\u0443\u043a\u0430 \u0438 \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u0438.</div>',
         unsafe_allow_html=True,
     )
 
@@ -710,185 +737,254 @@ with tab_settings:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(
-            '<div class="section-label">Overlay Mode</div>',
+            '<div class="section-label">\u0420\u0435\u0436\u0438\u043c \u043e\u0432\u0435\u0440\u043b\u0435\u0439</div>',
             unsafe_allow_html=True,
         )
         overlay_scale = st.slider(
-            "Screencast scale",
+            "\u041c\u0430\u0441\u0448\u0442\u0430\u0431 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u0430",
             0.1,
             0.8,
             cfg.composition.overlay.scale,
             0.05,
+            help=(
+                "\u0420\u0430\u0437\u043c\u0435\u0440 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u0430 \u043e\u0442\u043d\u043e\u0441\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u0448\u0438\u0440\u0438\u043d\u044b \u0432\u0438\u0434\u0435\u043e. "
+                "0.4 = 40% \u0448\u0438\u0440\u0438\u043d\u044b \u043a\u0430\u0434\u0440\u0430. \u0427\u0435\u043c \u0431\u043e\u043b\u044c\u0448\u0435 \u0437\u043d\u0430\u0447\u0435\u043d\u0438\u0435, \u0442\u0435\u043c \u043a\u0440\u0443\u043f\u043d\u0435\u0435 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442."
+            ),
         )
         overlay_position = st.selectbox(
-            "Screencast position",
+            "\u041f\u043e\u0437\u0438\u0446\u0438\u044f \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u0430",
             [p.value for p in Position],
             index=[p.value for p in Position].index(cfg.composition.overlay.position.value),
+            help="\u0423\u0433\u043e\u043b \u044d\u043a\u0440\u0430\u043d\u0430, \u0433\u0434\u0435 \u0431\u0443\u0434\u0435\u0442 \u0440\u0430\u0437\u043c\u0435\u0449\u0451\u043d \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442 \u043f\u043e\u0432\u0435\u0440\u0445 \u0430\u0432\u0430\u0442\u0430\u0440\u0430.",
         )
         overlay_margin = st.number_input(
-            "Margin (px)",
+            "\u041e\u0442\u0441\u0442\u0443\u043f \u043e\u0442 \u043a\u0440\u0430\u044f (\u043f\u043a\u0441.)",
             0,
             200,
             cfg.composition.overlay.margin,
+            help="\u0420\u0430\u0441\u0441\u0442\u043e\u044f\u043d\u0438\u0435 \u0432 \u043f\u0438\u043a\u0441\u0435\u043b\u044f\u0445 \u043e\u0442 \u043a\u0440\u0430\u044f \u043a\u0430\u0434\u0440\u0430 \u0434\u043e \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u0430. \u0420\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u043c\u043e\u0435 \u0437\u043d\u0430\u0447\u0435\u043d\u0438\u0435: 30\u201370.",
         )
 
         st.markdown("---")
         st.markdown(
-            '<div class="section-label">Picture-in-Picture</div>',
+            '<div class="section-label">\u041a\u0430\u0440\u0442\u0438\u043d\u043a\u0430-\u0432-\u043a\u0430\u0440\u0442\u0438\u043d\u043a\u0435 (PiP)</div>',
             unsafe_allow_html=True,
         )
         pip_head_scale = st.slider(
-            "Head size",
+            "\u0420\u0430\u0437\u043c\u0435\u0440 \u0433\u043e\u043b\u043e\u0432\u044b",
             0.1,
             0.5,
             cfg.composition.pip.head_scale,
             0.05,
+            help=(
+                "\u0420\u0430\u0437\u043c\u0435\u0440 \u043a\u0440\u0443\u0433\u043b\u043e\u0439 \u0432\u044b\u0440\u0435\u0437\u043a\u0438 \u0433\u043e\u043b\u043e\u0432\u044b \u0430\u0432\u0430\u0442\u0430\u0440\u0430 \u043e\u0442\u043d\u043e\u0441\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u0448\u0438\u0440\u0438\u043d\u044b \u0432\u0438\u0434\u0435\u043e. "
+                "0.25 = 25%. \u0413\u043e\u043b\u043e\u0432\u0430 \u0432\u044b\u0440\u0435\u0437\u0430\u0435\u0442\u0441\u044f \u0438\u0437 \u0430\u0432\u0430\u0442\u0430\u0440\u0430 \u0438 \u043d\u0430\u043a\u043b\u0430\u0434\u044b\u0432\u0430\u0435\u0442\u0441\u044f \u043f\u043e\u0432\u0435\u0440\u0445 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u0430."
+            ),
         )
         pip_head_position = st.selectbox(
-            "Head position",
+            "\u041f\u043e\u0437\u0438\u0446\u0438\u044f \u0433\u043e\u043b\u043e\u0432\u044b",
             [p.value for p in Position],
             index=[p.value for p in Position].index(cfg.composition.pip.head_position.value),
+            help="\u0423\u0433\u043e\u043b \u044d\u043a\u0440\u0430\u043d\u0430 \u0434\u043b\u044f \u0440\u0430\u0437\u043c\u0435\u0449\u0435\u043d\u0438\u044f \u043a\u0440\u0443\u0433\u043b\u043e\u0439 \u0432\u044b\u0440\u0435\u0437\u043a\u0438 \u0433\u043e\u043b\u043e\u0432\u044b \u0430\u0432\u0430\u0442\u0430\u0440\u0430.",
         )
 
     with col2:
         st.markdown(
-            '<div class="section-label">Output</div>',
+            '<div class="section-label">\u0412\u044b\u0445\u043e\u0434\u043d\u043e\u0435 \u0432\u0438\u0434\u0435\u043e</div>',
             unsafe_allow_html=True,
         )
         crf = st.slider(
-            "CRF (quality)",
+            "CRF (\u043a\u0430\u0447\u0435\u0441\u0442\u0432\u043e)",
             15,
             35,
             cfg.output.crf,
-            help="Lower = better quality, larger file",
+            help=(
+                "\u041a\u043e\u044d\u0444\u0444\u0438\u0446\u0438\u0435\u043d\u0442 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0430 FFmpeg. \u041c\u0435\u043d\u044c\u0448\u0435 = \u043b\u0443\u0447\u0448\u0435 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u043e, \u043d\u043e \u0442\u044f\u0436\u0435\u043b\u0435\u0435 \u0444\u0430\u0439\u043b. "
+                "18\u201323 \u2014 \u043e\u043f\u0442\u0438\u043c\u0430\u043b\u044c\u043d\u044b\u0439 \u0434\u0438\u0430\u043f\u0430\u0437\u043e\u043d \u0434\u043b\u044f \u0441\u043e\u0446\u0441\u0435\u0442\u0435\u0439. "
+                "15 \u2014 \u043f\u043e\u0447\u0442\u0438 \u0431\u0435\u0437 \u043f\u043e\u0442\u0435\u0440\u044c, 35 \u2014 \u0441\u0438\u043b\u044c\u043d\u043e\u0435 \u0441\u0436\u0430\u0442\u0438\u0435."
+            ),
         )
         codec = st.selectbox(
-            "Codec",
+            "\u041a\u043e\u0434\u0435\u043a",
             ["libx264", "libx265"],
             index=0 if cfg.output.codec == "libx264" else 1,
+            help=(
+                "H.264 (libx264) \u2014 \u0431\u044b\u0441\u0442\u0440\u0435\u0435 \u043a\u043e\u0434\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435, \u043c\u0430\u043a\u0441\u0438\u043c\u0430\u043b\u044c\u043d\u0430\u044f \u0441\u043e\u0432\u043c\u0435\u0441\u0442\u0438\u043c\u043e\u0441\u0442\u044c. "
+                "H.265 (libx265) \u2014 \u043c\u0435\u043d\u044c\u0448\u0435 \u0440\u0430\u0437\u043c\u0435\u0440 \u0444\u0430\u0439\u043b\u0430 \u043f\u0440\u0438 \u0442\u043e\u043c \u0436\u0435 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0435, \u043d\u043e \u043c\u0435\u0434\u043b\u0435\u043d\u043d\u0435\u0435. "
+                "\u0414\u043b\u044f TikTok/Reels \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u0442\u0441\u044f H.264."
+            ),
         )
 
         st.markdown("---")
         st.markdown(
-            '<div class="section-label">Audio</div>',
+            '<div class="section-label">\u0410\u0443\u0434\u0438\u043e</div>',
             unsafe_allow_html=True,
         )
         normalize_audio = st.checkbox(
-            "Loudness normalization",
+            "\u041d\u043e\u0440\u043c\u0430\u043b\u0438\u0437\u0430\u0446\u0438\u044f \u0433\u0440\u043e\u043c\u043a\u043e\u0441\u0442\u0438",
             value=cfg.audio.normalize,
+            help=(
+                "\u0412\u044b\u0440\u0430\u0432\u043d\u0438\u0432\u0430\u043d\u0438\u0435 \u0433\u0440\u043e\u043c\u043a\u043e\u0441\u0442\u0438 \u043f\u043e \u0441\u0442\u0430\u043d\u0434\u0430\u0440\u0442\u0443 LUFS. "
+                "\u0412\u043a\u043b\u044e\u0447\u0438\u0442\u0435, \u0447\u0442\u043e\u0431\u044b \u0432\u0441\u0435 \u043a\u043b\u0438\u043f\u044b \u0437\u0432\u0443\u0447\u0430\u043b\u0438 \u043e\u0434\u0438\u043d\u0430\u043a\u043e\u0432\u043e \u0433\u0440\u043e\u043c\u043a\u043e, "
+                "\u0434\u0430\u0436\u0435 \u0435\u0441\u043b\u0438 \u0438\u0441\u0445\u043e\u0434\u043d\u044b\u0435 \u0430\u0432\u0430\u0442\u0430\u0440\u044b \u0437\u0430\u043f\u0438\u0441\u0430\u043d\u044b \u0441 \u0440\u0430\u0437\u043d\u043e\u0439 \u0433\u0440\u043e\u043c\u043a\u043e\u0441\u0442\u044c\u044e."
+            ),
         )
         target_loudness = st.slider(
-            "Target loudness (LUFS)",
+            "\u0426\u0435\u043b\u0435\u0432\u0430\u044f \u0433\u0440\u043e\u043c\u043a\u043e\u0441\u0442\u044c (LUFS)",
             -24,
             -8,
             cfg.audio.target_loudness,
-            help="Social media standard: -14 LUFS",
+            help=(
+                "\u0421\u0442\u0430\u043d\u0434\u0430\u0440\u0442 \u0434\u043b\u044f \u0441\u043e\u0446\u0441\u0435\u0442\u0435\u0439: -14 LUFS. "
+                "-24 \u2014 \u043e\u0447\u0435\u043d\u044c \u0442\u0438\u0445\u043e, -8 \u2014 \u043e\u0447\u0435\u043d\u044c \u0433\u0440\u043e\u043c\u043a\u043e. "
+                "TikTok \u0438 Instagram \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u044e\u0442 -14 LUFS."
+            ),
         )
 
         st.markdown("---")
         st.markdown(
-            '<div class="section-label">Smart Sync (Whisper)</div>',
+            '<div class="section-label">\u0423\u043c\u043d\u0430\u044f \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u044f (Whisper)</div>',
             unsafe_allow_html=True,
         )
         enable_sync = st.checkbox(
-            "Auto-sync screencasts",
+            "\u0410\u0432\u0442\u043e-\u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u044f \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u043e\u0432",
             value=False,
-            help="Detect screencast timing via speech keywords",
+            help=(
+                "\u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u043e\u0435 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u0438\u0435 \u0442\u0430\u0439\u043c\u0438\u043d\u0433\u0430 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u043e\u0432 \u043f\u043e \u043a\u043b\u044e\u0447\u0435\u0432\u044b\u043c \u0441\u043b\u043e\u0432\u0430\u043c \u0432 \u0440\u0435\u0447\u0438 \u0430\u0432\u0430\u0442\u0430\u0440\u0430. "
+                '\u0418\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0439\u0442\u0435 \u0442\u0435\u0433\u0438 word:"..." \u0432 \u0441\u043a\u0440\u0438\u043f\u0442\u0435 \u0432\u043c\u0435\u0441\u0442\u043e \u0447\u0438\u0441\u043b\u043e\u0432\u044b\u0445 \u0442\u0430\u0439\u043c\u043a\u043e\u0434\u043e\u0432. '
+                "\u0422\u0440\u0435\u0431\u0443\u0435\u0442 \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044b\u0439 openai-whisper."
+            ),
         )
         sync_model = st.selectbox(
-            "Whisper model",
+            "\u041c\u043e\u0434\u0435\u043b\u044c Whisper",
             ["tiny", "base", "small", "medium", "large"],
             index=1,
+            help=(
+                "\u0412\u044b\u0431\u043e\u0440 \u043c\u043e\u0434\u0435\u043b\u0438 \u0440\u0430\u0441\u043f\u043e\u0437\u043d\u0430\u0432\u0430\u043d\u0438\u044f \u0440\u0435\u0447\u0438. "
+                "tiny \u2014 \u0431\u044b\u0441\u0442\u0440\u0430\u044f, \u043d\u043e \u043c\u0435\u043d\u0435\u0435 \u0442\u043e\u0447\u043d\u0430\u044f. "
+                "base \u2014 \u0445\u043e\u0440\u043e\u0448\u0438\u0439 \u0431\u0430\u043b\u0430\u043d\u0441 \u0441\u043a\u043e\u0440\u043e\u0441\u0442\u0438 \u0438 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0430. "
+                "large \u2014 \u043c\u0430\u043a\u0441\u0438\u043c\u0430\u043b\u044c\u043d\u0430\u044f \u0442\u043e\u0447\u043d\u043e\u0441\u0442\u044c, \u043d\u043e \u043c\u0435\u0434\u043b\u0435\u043d\u043d\u0430\u044f."
+            ),
         )
 
     st.markdown("---")
     col3, col4 = st.columns(2)
     with col3:
         st.markdown(
-            '<div class="section-label">Split Screen</div>',
+            '<div class="section-label">\u0420\u0430\u0437\u0434\u0435\u043b\u0451\u043d\u043d\u044b\u0439 \u044d\u043a\u0440\u0430\u043d (Split)</div>',
             unsafe_allow_html=True,
         )
         split_avatar_side = st.selectbox(
-            "Avatar side",
+            "\u0421\u0442\u043e\u0440\u043e\u043d\u0430 \u0430\u0432\u0430\u0442\u0430\u0440\u0430",
             ["left", "right"],
-            help="Which side the avatar appears on",
+            help=(
+                "\u041d\u0430 \u043a\u0430\u043a\u043e\u0439 \u0441\u0442\u043e\u0440\u043e\u043d\u0435 \u044d\u043a\u0440\u0430\u043d\u0430 \u0431\u0443\u0434\u0435\u0442 \u0430\u0432\u0430\u0442\u0430\u0440: left \u2014 \u0441\u043b\u0435\u0432\u0430, right \u2014 \u0441\u043f\u0440\u0430\u0432\u0430. "
+                "\u0421\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442 \u0437\u0430\u0439\u043c\u0451\u0442 \u043f\u0440\u043e\u0442\u0438\u0432\u043e\u043f\u043e\u043b\u043e\u0436\u043d\u0443\u044e \u0441\u0442\u043e\u0440\u043e\u043d\u0443."
+            ),
         )
         split_ratio = st.slider(
-            "Split ratio",
+            "\u041f\u0440\u043e\u043f\u043e\u0440\u0446\u0438\u044f \u0440\u0430\u0437\u0434\u0435\u043b\u0435\u043d\u0438\u044f",
             0.3,
             0.7,
             0.5,
             0.05,
-            help="Proportion of width for avatar side",
+            help=(
+                "\u0414\u043e\u043b\u044f \u0448\u0438\u0440\u0438\u043d\u044b \u044d\u043a\u0440\u0430\u043d\u0430 \u0434\u043b\u044f \u0441\u0442\u043e\u0440\u043e\u043d\u044b \u0430\u0432\u0430\u0442\u0430\u0440\u0430. "
+                "0.5 = \u043f\u043e\u043f\u043e\u043b\u0430\u043c (50/50). 0.3 = 30% \u0430\u0432\u0430\u0442\u0430\u0440, 70% \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442."
+            ),
         )
 
         st.markdown("---")
         st.markdown(
-            '<div class="section-label">Green Screen</div>',
+            '<div class="section-label">\u0417\u0435\u043b\u0451\u043d\u044b\u0439 \u044d\u043a\u0440\u0430\u043d (Green Screen)</div>',
             unsafe_allow_html=True,
         )
         gs_avatar_scale = st.slider(
-            "Avatar scale",
+            "\u041c\u0430\u0441\u0448\u0442\u0430\u0431 \u0430\u0432\u0430\u0442\u0430\u0440\u0430",
             0.3,
             1.0,
             0.8,
             0.05,
-            help="Size of transparent avatar overlay",
+            help=(
+                "\u0420\u0430\u0437\u043c\u0435\u0440 \u043f\u0440\u043e\u0437\u0440\u0430\u0447\u043d\u043e\u0433\u043e \u0430\u0432\u0430\u0442\u0430\u0440\u0430 \u043e\u0442\u043d\u043e\u0441\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u0448\u0438\u0440\u0438\u043d\u044b \u0432\u0438\u0434\u0435\u043e. "
+                "\u0424\u043e\u043d \u0430\u0432\u0430\u0442\u0430\u0440\u0430 \u0443\u0434\u0430\u043b\u044f\u0435\u0442\u0441\u044f, \u043e\u0441\u0442\u0430\u0451\u0442\u0441\u044f \u0442\u043e\u043b\u044c\u043a\u043e \u0444\u0438\u0433\u0443\u0440\u0430 \u0447\u0435\u043b\u043e\u0432\u0435\u043a\u0430. "
+                "\u0422\u0440\u0435\u0431\u0443\u0435\u0442 \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044b\u0439 rembg."
+            ),
         )
         gs_avatar_position = st.selectbox(
-            "Avatar position (GS)",
+            "\u041f\u043e\u0437\u0438\u0446\u0438\u044f \u0430\u0432\u0430\u0442\u0430\u0440\u0430 (GS)",
             [p.value for p in Position],
             index=[p.value for p in Position].index("bottom-right"),
+            help="\u0423\u0433\u043e\u043b \u044d\u043a\u0440\u0430\u043d\u0430, \u0433\u0434\u0435 \u0431\u0443\u0434\u0435\u0442 \u0440\u0430\u0437\u043c\u0435\u0449\u0451\u043d \u043f\u0440\u043e\u0437\u0440\u0430\u0447\u043d\u044b\u0439 \u0430\u0432\u0430\u0442\u0430\u0440 \u043f\u043e\u0432\u0435\u0440\u0445 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u0430.",
         )
 
     with col4:
         st.markdown(
-            '<div class="section-label">Auto-Subtitles</div>',
+            '<div class="section-label">\u0410\u0432\u0442\u043e-\u0441\u0443\u0431\u0442\u0438\u0442\u0440\u044b</div>',
             unsafe_allow_html=True,
         )
         enable_subtitles = st.checkbox(
-            "Enable subtitles",
+            "\u0412\u043a\u043b\u044e\u0447\u0438\u0442\u044c \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u044b",
             value=False,
-            help="Generate karaoke-style subtitles from speech",
+            help=(
+                "\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043e\u0432 \u0432 \u0441\u0442\u0438\u043b\u0435 \u043a\u0430\u0440\u0430\u043e\u043a\u0435 \u043d\u0430 \u043e\u0441\u043d\u043e\u0432\u0435 \u0440\u0430\u0441\u043f\u043e\u0437\u043d\u0430\u0432\u0430\u043d\u0438\u044f \u0440\u0435\u0447\u0438. "
+                "\u0421\u043b\u043e\u0432\u0430 \u043f\u043e\u0434\u0441\u0432\u0435\u0447\u0438\u0432\u0430\u044e\u0442\u0441\u044f \u043f\u043e \u043c\u0435\u0440\u0435 \u043f\u0440\u043e\u0438\u0437\u043d\u0435\u0441\u0435\u043d\u0438\u044f. "
+                "\u0422\u0440\u0435\u0431\u0443\u0435\u0442 openai-whisper. \u0424\u043e\u0440\u043c\u0430\u0442 \u0432\u044b\u0445\u043e\u0434\u0430: ASS."
+            ),
         )
         subtitle_font_size = st.slider(
-            "Subtitle font size",
+            "\u0420\u0430\u0437\u043c\u0435\u0440 \u0448\u0440\u0438\u0444\u0442\u0430 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043e\u0432",
             24,
             96,
             48,
-            help="Font size for subtitles",
+            help="\u0420\u0430\u0437\u043c\u0435\u0440 \u0442\u0435\u043a\u0441\u0442\u0430 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043e\u0432 \u0432 \u043f\u0438\u043a\u0441\u0435\u043b\u044f\u0445. 48 \u2014 \u0441\u0442\u0430\u043d\u0434\u0430\u0440\u0442 \u0434\u043b\u044f 1080\u00d71920. \u0423\u0432\u0435\u043b\u0438\u0447\u044c\u0442\u0435 \u0434\u043e 64\u201396 \u0434\u043b\u044f \u0430\u0433\u0440\u0435\u0441\u0441\u0438\u0432\u043d\u043e\u0433\u043e \u0441\u0442\u0438\u043b\u044f.",
         )
         subtitle_model = st.selectbox(
-            "Subtitle Whisper model",
+            "\u041c\u043e\u0434\u0435\u043b\u044c Whisper \u0434\u043b\u044f \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043e\u0432",
             ["tiny", "base", "small", "medium", "large"],
             index=1,
+            help=(
+                "\u041c\u043e\u0434\u0435\u043b\u044c \u0434\u043b\u044f \u0440\u0430\u0441\u043f\u043e\u0437\u043d\u0430\u0432\u0430\u043d\u0438\u044f \u0440\u0435\u0447\u0438 \u043f\u0440\u0438 \u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u0438 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043e\u0432. "
+                "\u0427\u0435\u043c \u0431\u043e\u043b\u044c\u0448\u0435 \u043c\u043e\u0434\u0435\u043b\u044c, \u0442\u0435\u043c \u0442\u043e\u0447\u043d\u0435\u0435 \u0442\u0430\u0439\u043c\u0438\u043d\u0433 \u0441\u043b\u043e\u0432, \u043d\u043e \u043c\u0435\u0434\u043b\u0435\u043d\u043d\u0435\u0435 \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0430."
+            ),
         )
 
         st.markdown("---")
         st.markdown(
-            '<div class="section-label">Background Music</div>',
+            '<div class="section-label">\u0424\u043e\u043d\u043e\u0432\u0430\u044f \u043c\u0443\u0437\u044b\u043a\u0430</div>',
             unsafe_allow_html=True,
         )
         music_file_upload = st.file_uploader(
-            "Music file",
+            "\u041c\u0443\u0437\u044b\u043a\u0430\u043b\u044c\u043d\u044b\u0439 \u0444\u0430\u0439\u043b",
             type=["mp3", "wav", "m4a", "ogg"],
-            help="Background music track",
+            help=(
+                "\u0424\u043e\u043d\u043e\u0432\u044b\u0439 \u043c\u0443\u0437\u044b\u043a\u0430\u043b\u044c\u043d\u044b\u0439 \u0442\u0440\u0435\u043a. "
+                "\u041f\u043e\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u044e\u0442\u0441\u044f \u0444\u043e\u0440\u043c\u0430\u0442\u044b: MP3, WAV, M4A, OGG. "
+                "\u041c\u0443\u0437\u044b\u043a\u0430 \u0431\u0443\u0434\u0435\u0442 \u0437\u0430\u0446\u0438\u043a\u043b\u0435\u043d\u0430 \u043d\u0430 \u0434\u043b\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0441\u0442\u044c \u0432\u0438\u0434\u0435\u043e \u0438 \u043c\u0438\u043a\u0448\u0438\u0440\u043e\u0432\u0430\u043d\u0430 \u0441 \u043e\u0437\u0432\u0443\u0447\u043a\u043e\u0439."
+            ),
         )
         music_volume = st.slider(
-            "Music volume",
+            "\u0413\u0440\u043e\u043c\u043a\u043e\u0441\u0442\u044c \u043c\u0443\u0437\u044b\u043a\u0438",
             0.0,
             1.0,
             0.15,
             0.05,
-            help="Volume level for background music",
+            help=(
+                "\u0423\u0440\u043e\u0432\u0435\u043d\u044c \u0433\u0440\u043e\u043c\u043a\u043e\u0441\u0442\u0438 \u0444\u043e\u043d\u043e\u0432\u043e\u0439 \u043c\u0443\u0437\u044b\u043a\u0438 \u043e\u0442\u043d\u043e\u0441\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u043e\u0437\u0432\u0443\u0447\u043a\u0438. "
+                "0.15 = 15% \u2014 \u043d\u0435\u043d\u0430\u0432\u044f\u0437\u0447\u0438\u0432\u044b\u0439 \u0444\u043e\u043d. "
+                "0.3\u20130.5 \u2014 \u0437\u0430\u043c\u0435\u0442\u043d\u0430\u044f \u043c\u0443\u0437\u044b\u043a\u0430. 1.0 \u2014 \u043e\u0434\u0438\u043d\u0430\u043a\u043e\u0432\u0430\u044f \u0433\u0440\u043e\u043c\u043a\u043e\u0441\u0442\u044c \u0441 \u043e\u0437\u0432\u0443\u0447\u043a\u043e\u0439."
+            ),
         )
         music_fade_out = st.slider(
-            "Fade-out (sec)",
+            "\u0417\u0430\u0442\u0443\u0445\u0430\u043d\u0438\u0435 (\u0441\u0435\u043a.)",
             0.0,
             10.0,
             2.0,
             0.5,
-            help="Fade-out duration at the end",
+            help=(
+                "\u0414\u043b\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0441\u0442\u044c \u043f\u043b\u0430\u0432\u043d\u043e\u0433\u043e \u0437\u0430\u0442\u0443\u0445\u0430\u043d\u0438\u044f \u043c\u0443\u0437\u044b\u043a\u0438 \u0432 \u043a\u043e\u043d\u0446\u0435 \u0432\u0438\u0434\u0435\u043e. "
+                "0 \u2014 \u0440\u0435\u0437\u043a\u043e\u0435 \u043e\u0431\u0440\u044b\u0432\u0430\u043d\u0438\u0435. 2\u20133 \u0441\u0435\u043a. \u2014 \u043f\u043b\u0430\u0432\u043d\u044b\u0439 \u0444\u0438\u043d\u0438\u0448."
+            ),
         )
 
     # Save music upload to disk
@@ -926,10 +1022,10 @@ with tab_settings:
 # ---------------------------------------------------------------------------
 with tab_scripts:
     st.markdown(
-        '<div class="hero-badge">Library</div>'
-        '<div class="hero-title">Scripts</div>'
+        '<div class="hero-badge">\u0411\u0438\u0431\u043b\u0438\u043e\u0442\u0435\u043a\u0430</div>'
+        '<div class="hero-title">\u0421\u043a\u0440\u0438\u043f\u0442\u044b</div>'
         '<div class="hero-subtitle">'
-        "Upload .md files via the sidebar to populate your script library."
+        "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 .md \u0444\u0430\u0439\u043b\u044b \u0447\u0435\u0440\u0435\u0437 \u0431\u043e\u043a\u043e\u0432\u0443\u044e \u043f\u0430\u043d\u0435\u043b\u044c, \u0447\u0442\u043e\u0431\u044b \u0437\u0430\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0438\u0431\u043b\u0438\u043e\u0442\u0435\u043a\u0443 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0435\u0432."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -938,15 +1034,15 @@ with tab_scripts:
         st.markdown(
             '<div class="card-highlight" style="margin-bottom:1rem;">'
             '<div style="font-size:.85rem; color:var(--text-secondary); line-height:1.6;">'
-            "No scripts loaded yet. Drop <code>.md</code> files into the sidebar.<br><br>"
-            "<strong>Expected format:</strong>"
+            "\u0421\u043a\u0440\u0438\u043f\u0442\u044b \u0435\u0449\u0451 \u043d\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043d\u044b. \u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 <code>.md</code> \u0444\u0430\u0439\u043b\u044b \u0432 \u0431\u043e\u043a\u043e\u0432\u0443\u044e \u043f\u0430\u043d\u0435\u043b\u044c.<br><br>"
+            "<strong>\u041e\u0436\u0438\u0434\u0430\u0435\u043c\u044b\u0439 \u0444\u043e\u0440\u043c\u0430\u0442:</strong>"
             "</div>"
             '<div style="margin-top:.75rem; padding:.75rem 1rem; background:rgba(0,0,0,.2); '
             "border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:.78rem; "
             'color:var(--text-secondary); line-height:1.7;">'
-            '### Script A1: "Title"<br>'
+            '### Script A1: "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435"<br>'
             "**Clip 1 (8s):**<br>"
-            'Says: "Voiceover text"<br>'
+            'Says: "\u0422\u0435\u043a\u0441\u0442 \u043e\u0437\u0432\u0443\u0447\u043a\u0438"<br>'
             "[screencast: app @ 1.5-5.0 mode:overlay]"
             "</div></div>",
             unsafe_allow_html=True,
@@ -958,11 +1054,11 @@ with tab_scripts:
         st.markdown(
             f'<div class="stat-row">'
             f'<div class="stat-item"><div class="stat-value">{len(all_scripts)}</div>'
-            f'<div class="stat-label">Scripts</div></div>'
+            f'<div class="stat-label">\u0421\u043a\u0440\u0438\u043f\u0442\u043e\u0432</div></div>'
             f'<div class="stat-item"><div class="stat-value">{total_segments}</div>'
-            f'<div class="stat-label">Segments</div></div>'
-            f'<div class="stat-item"><div class="stat-value">{total_duration:.0f}s</div>'
-            f'<div class="stat-label">Total Duration</div></div>'
+            f'<div class="stat-label">\u0421\u0435\u0433\u043c\u0435\u043d\u0442\u043e\u0432</div></div>'
+            f'<div class="stat-item"><div class="stat-value">{total_duration:.0f}\u0441</div>'
+            f'<div class="stat-label">\u041e\u0431\u0449\u0430\u044f \u0434\u043b\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0441\u0442\u044c</div></div>'
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -970,13 +1066,17 @@ with tab_scripts:
         for script in all_scripts:
             with st.expander(
                 f"{script.script_id}: {script.title}  \u2014  "
-                f"{len(script.segments)} clips, ~{script.total_duration:.0f}s"
+                f"{len(script.segments)} \u043a\u043b\u0438\u043f\u043e\u0432, ~{script.total_duration:.0f}\u0441"
             ):
                 for seg in script.segments:
                     # Build screencast tags
                     sc_html = ""
                     for sc in seg.screencasts:
-                        mode_label = "PiP" if sc.mode == CompositionMode.PIP else "Overlay"
+                        mode_label = (
+                            "PiP"
+                            if sc.mode == CompositionMode.PIP
+                            else "\u041e\u0432\u0435\u0440\u043b\u0435\u0439"
+                        )
                         if sc.start_keyword:
                             sc_html += (
                                 f'<div class="screencast-tag">'
@@ -993,8 +1093,8 @@ with tab_scripts:
                         f'<div class="segment-card">'
                         f'<div class="segment-header">'
                         f'<div class="segment-badge">{seg.id}</div>'
-                        f'<div style="font-weight:600; font-size:.85rem;">Clip {seg.id}</div>'
-                        f'<div class="segment-duration">{seg.duration:.0f}s</div>'
+                        f'<div style="font-weight:600; font-size:.85rem;">\u041a\u043b\u0438\u043f {seg.id}</div>'
+                        f'<div class="segment-duration">{seg.duration:.0f}\u0441</div>'
                         f"</div>"
                         f'<div class="segment-text">{seg.text}</div>'
                         f"{sc_html}"
@@ -1007,10 +1107,10 @@ with tab_scripts:
 # ---------------------------------------------------------------------------
 with tab_compose:
     st.markdown(
-        '<div class="hero-badge">Production</div>'
-        '<div class="hero-title">Compose</div>'
+        '<div class="hero-badge">\u041f\u0440\u043e\u0438\u0437\u0432\u043e\u0434\u0441\u0442\u0432\u043e</div>'
+        '<div class="hero-title">\u0421\u0431\u043e\u0440\u043a\u0430</div>'
         '<div class="hero-subtitle">'
-        "Select a script, match avatars, preview the timeline, and render."
+        "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0441\u043a\u0440\u0438\u043f\u0442, \u043f\u0440\u0438\u0432\u044f\u0436\u0438\u0442\u0435 \u0430\u0432\u0430\u0442\u0430\u0440\u044b, \u043f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0442\u0430\u0439\u043c\u043b\u0430\u0439\u043d \u0438 \u0437\u0430\u043f\u0443\u0441\u0442\u0438\u0442\u0435 \u0440\u0435\u043d\u0434\u0435\u0440."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -1018,33 +1118,44 @@ with tab_compose:
     # Workflow steps
     st.markdown(
         '<div class="workflow-steps">'
-        '<div class="workflow-step"><div class="workflow-num">1</div>Upload script</div>'
-        '<div class="workflow-step"><div class="workflow-num">2</div>Upload avatars</div>'
-        '<div class="workflow-step"><div class="workflow-num">3</div>Preview timeline</div>'
-        '<div class="workflow-step"><div class="workflow-num">4</div>Render video</div>'
+        '<div class="workflow-step"><div class="workflow-num">1</div>\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0441\u043a\u0440\u0438\u043f\u0442</div>'
+        '<div class="workflow-step"><div class="workflow-num">2</div>\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0430\u0432\u0430\u0442\u0430\u0440\u044b</div>'
+        '<div class="workflow-step"><div class="workflow-num">3</div>\u041f\u0440\u043e\u0432\u0435\u0440\u0438\u0442\u044c \u0442\u0430\u0439\u043c\u043b\u0430\u0439\u043d</div>'
+        '<div class="workflow-step"><div class="workflow-num">4</div>\u0421\u043e\u0431\u0440\u0430\u0442\u044c \u0432\u0438\u0434\u0435\u043e</div>'
         "</div>",
         unsafe_allow_html=True,
     )
 
     if not all_scripts:
-        st.warning("Upload scripts first via the sidebar.")
+        st.warning(
+            "\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 \u0441\u043a\u0440\u0438\u043f\u0442\u044b \u0447\u0435\u0440\u0435\u0437 \u0431\u043e\u043a\u043e\u0432\u0443\u044e \u043f\u0430\u043d\u0435\u043b\u044c."
+        )
     else:
         script_options = {f"{s.script_id}: {s.title}": s for s in all_scripts}
-        selected_label = st.selectbox("Script", list(script_options.keys()))
+        selected_label = st.selectbox(
+            "\u0421\u043a\u0440\u0438\u043f\u0442",
+            list(script_options.keys()),
+            help="\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0439 \u0434\u043b\u044f \u0441\u0431\u043e\u0440\u043a\u0438. \u041a\u0430\u0436\u0434\u044b\u0439 \u0441\u043a\u0440\u0438\u043f\u0442 \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u0442 \u043d\u0430\u0431\u043e\u0440 \u043a\u043b\u0438\u043f\u043e\u0432 \u0441 \u043e\u0437\u0432\u0443\u0447\u043a\u043e\u0439 \u0438 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442\u0430\u043c\u0438.",
+        )
         selected_script = script_options[selected_label]
 
         # Composition mode selector
         mode_options = {
-            "Overlay": CompositionMode.OVERLAY,
-            "PiP": CompositionMode.PIP,
-            "Split Screen": CompositionMode.SPLIT,
-            "Green Screen": CompositionMode.GREENSCREEN,
+            "\u041e\u0432\u0435\u0440\u043b\u0435\u0439": CompositionMode.OVERLAY,
+            "\u041a\u0430\u0440\u0442\u0438\u043d\u043a\u0430-\u0432-\u043a\u0430\u0440\u0442\u0438\u043d\u043a\u0435 (PiP)": CompositionMode.PIP,
+            "\u0420\u0430\u0437\u0434\u0435\u043b\u0451\u043d\u043d\u044b\u0439 \u044d\u043a\u0440\u0430\u043d": CompositionMode.SPLIT,
+            "\u0417\u0435\u043b\u0451\u043d\u044b\u0439 \u044d\u043a\u0440\u0430\u043d": CompositionMode.GREENSCREEN,
         }
         comp_mode = st.radio(
-            "Composition mode",
+            "\u0420\u0435\u0436\u0438\u043c \u043a\u043e\u043c\u043f\u043e\u0437\u0438\u0446\u0438\u0438",
             list(mode_options.keys()),
             horizontal=True,
-            help="Overlay: screencast in corner. PiP: head cutout. Split: side-by-side. Green Screen: bg removed.",
+            help=(
+                "\u041e\u0432\u0435\u0440\u043b\u0435\u0439: \u0430\u0432\u0430\u0442\u0430\u0440 \u043d\u0430 \u0432\u0435\u0441\u044c \u044d\u043a\u0440\u0430\u043d, \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442 \u0432 \u0443\u0433\u043b\u0443. "
+                "PiP: \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442 \u043d\u0430 \u0432\u0435\u0441\u044c \u044d\u043a\u0440\u0430\u043d, \u0433\u043e\u043b\u043e\u0432\u0430 \u0430\u0432\u0430\u0442\u0430\u0440\u0430 \u0432 \u0443\u0433\u043b\u0443. "
+                "\u0420\u0430\u0437\u0434\u0435\u043b\u0451\u043d\u043d\u044b\u0439: \u0430\u0432\u0430\u0442\u0430\u0440 \u0438 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442 \u0440\u044f\u0434\u043e\u043c. "
+                "\u0417\u0435\u043b\u0451\u043d\u044b\u0439 \u044d\u043a\u0440\u0430\u043d: \u0444\u043e\u043d \u0430\u0432\u0430\u0442\u0430\u0440\u0430 \u0443\u0434\u0430\u043b\u044f\u0435\u0442\u0441\u044f, \u0444\u0438\u0433\u0443\u0440\u0430 \u043d\u0430\u043a\u043b\u0430\u0434\u044b\u0432\u0430\u0435\u0442\u0441\u044f \u043d\u0430 \u0441\u043a\u0440\u0438\u043d\u043a\u0430\u0441\u0442."
+            ),
         )
         selected_mode = mode_options[comp_mode]
 
@@ -1058,9 +1169,9 @@ with tab_compose:
 
         st.markdown(
             f'<div style="display:flex; gap:1rem; align-items:center; margin:.75rem 0;">'
-            f'<div class="file-status {status_class}">{status_icon} {avs_count} avatars</div>'
+            f'<div class="file-status {status_class}">{status_icon} {avs_count} \u0430\u0432\u0430\u0442\u0430\u0440\u043e\u0432</div>'
             f'<div style="font-size:.82rem; color:var(--text-muted);">'
-            f"Needed: {segs_count} segments</div>"
+            f"\u041d\u0443\u0436\u043d\u043e: {segs_count} \u0441\u0435\u0433\u043c\u0435\u043d\u0442\u043e\u0432</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -1071,7 +1182,10 @@ with tab_compose:
         matched_avatars = prefix_matched if prefix_matched else available_avatars
 
         if matched_avatars:
-            with st.expander("Avatar mapping", expanded=False):
+            with st.expander(
+                "\u041f\u0440\u0438\u0432\u044f\u0437\u043a\u0430 \u0430\u0432\u0430\u0442\u0430\u0440\u043e\u0432",
+                expanded=False,
+            ):
                 for i, seg in enumerate(selected_script.segments):
                     if i < len(matched_avatars):
                         st.markdown(
@@ -1084,15 +1198,22 @@ with tab_compose:
                             unsafe_allow_html=True,
                         )
                     else:
-                        st.warning(f"Segment {seg.id} \u2014 no avatar available")
+                        st.warning(
+                            f"\u0421\u0435\u0433\u043c\u0435\u043d\u0442 {seg.id} \u2014 \u043d\u0435\u0442 \u0430\u0432\u0430\u0442\u0430\u0440\u0430"
+                        )
 
         col_preview, col_compose = st.columns(2)
 
         # Preview timeline
         with col_preview:
-            if st.button("Preview timeline", use_container_width=True):
+            if st.button(
+                "\u041f\u0440\u0435\u0432\u044c\u044e \u0442\u0430\u0439\u043c\u043b\u0430\u0439\u043d\u0430",
+                use_container_width=True,
+            ):
                 if not matched_avatars:
-                    st.error("No avatars available.")
+                    st.error(
+                        "\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0445 \u0430\u0432\u0430\u0442\u0430\u0440\u043e\u0432."
+                    )
                 else:
                     if selected_mode != CompositionMode.OVERLAY:
                         for seg in selected_script.segments:
@@ -1104,12 +1225,16 @@ with tab_compose:
                         try:
                             from ugckit.sync import sync_screencast_timing
 
-                            with st.spinner("Running Whisper sync..."):
+                            with st.spinner(
+                                "\u0417\u0430\u043f\u0443\u0441\u043a Whisper \u0434\u043b\u044f \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u0438..."
+                            ):
                                 script_to_use = sync_screencast_timing(
                                     selected_script, matched_avatars, sync_model
                                 )
                         except Exception as e:
-                            st.warning(f"Sync failed: {e}")
+                            st.warning(
+                                f"\u0421\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u044f \u043d\u0435 \u0443\u0434\u0430\u043b\u0430\u0441\u044c: {e}"
+                            )
 
                     output_path = OUTPUT_DIR / f"{script_to_use.script_id}.mp4"
                     try:
@@ -1122,16 +1247,22 @@ with tab_compose:
                         st.code(format_timeline(timeline))
 
                         cmd = compose_video(timeline, cfg, dry_run=True)
-                        with st.expander("FFmpeg command"):
+                        with st.expander("\u041a\u043e\u043c\u0430\u043d\u0434\u0430 FFmpeg"):
                             st.code(format_ffmpeg_cmd(cmd), language="bash")
                     except (ValueError, FFmpegError) as e:
                         st.error(str(e))
 
         # Compose video
         with col_compose:
-            if st.button("Render video", type="primary", use_container_width=True):
+            if st.button(
+                "\u0421\u043e\u0431\u0440\u0430\u0442\u044c \u0432\u0438\u0434\u0435\u043e",
+                type="primary",
+                use_container_width=True,
+            ):
                 if not matched_avatars:
-                    st.error("No avatars available.")
+                    st.error(
+                        "\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0445 \u0430\u0432\u0430\u0442\u0430\u0440\u043e\u0432."
+                    )
                 else:
                     if selected_mode != CompositionMode.OVERLAY:
                         for seg in selected_script.segments:
@@ -1143,12 +1274,16 @@ with tab_compose:
                         try:
                             from ugckit.sync import sync_screencast_timing
 
-                            with st.spinner("Running Whisper sync..."):
+                            with st.spinner(
+                                "\u0417\u0430\u043f\u0443\u0441\u043a Whisper \u0434\u043b\u044f \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u0438..."
+                            ):
                                 script_to_use = sync_screencast_timing(
                                     selected_script, matched_avatars, sync_model
                                 )
                         except Exception as e:
-                            st.warning(f"Sync failed: {e}")
+                            st.warning(
+                                f"\u0421\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u044f \u043d\u0435 \u0443\u0434\u0430\u043b\u0430\u0441\u044c: {e}"
+                            )
 
                     output_path = OUTPUT_DIR / f"{script_to_use.script_id}.mp4"
                     try:
@@ -1168,7 +1303,9 @@ with tab_compose:
                                 from ugckit.pip_processor import create_head_video
 
                                 head_videos = []
-                                with st.spinner("Generating PiP head cutouts..."):
+                                with st.spinner(
+                                    "\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u0432\u044b\u0440\u0435\u0437\u043a\u0438 \u0433\u043e\u043b\u043e\u0432\u044b \u0434\u043b\u044f PiP..."
+                                ):
                                     for i, avatar in enumerate(matched_avatars):
                                         head_out = OUTPUT_DIR / f"head_{i}.webm"
                                         head_path = create_head_video(
@@ -1176,7 +1313,9 @@ with tab_compose:
                                         )
                                         head_videos.append(head_path)
                             except Exception as e:
-                                st.warning(f"PiP head extraction failed: {e}")
+                                st.warning(
+                                    f"\u041e\u0448\u0438\u0431\u043a\u0430 \u0432\u044b\u0440\u0435\u0437\u043a\u0438 \u0433\u043e\u043b\u043e\u0432\u044b PiP: {e}"
+                                )
                                 head_videos = None
 
                         elif selected_mode == CompositionMode.GREENSCREEN:
@@ -1185,7 +1324,9 @@ with tab_compose:
 
                                 transparent_avatars = []
                                 gs_cfg = cfg.composition.greenscreen
-                                with st.spinner("Removing avatar backgrounds..."):
+                                with st.spinner(
+                                    "\u0423\u0434\u0430\u043b\u0435\u043d\u0438\u0435 \u0444\u043e\u043d\u0430 \u0430\u0432\u0430\u0442\u0430\u0440\u043e\u0432..."
+                                ):
                                     for i, avatar in enumerate(matched_avatars):
                                         out = OUTPUT_DIR / f"transparent_{i}.webm"
                                         ta = create_transparent_avatar(
@@ -1196,7 +1337,9 @@ with tab_compose:
                                         )
                                         transparent_avatars.append(ta)
                             except Exception as e:
-                                st.warning(f"Green screen processing failed: {e}")
+                                st.warning(
+                                    f"\u041e\u0448\u0438\u0431\u043a\u0430 \u0443\u0434\u0430\u043b\u0435\u043d\u0438\u044f \u0444\u043e\u043d\u0430: {e}"
+                                )
                                 transparent_avatars = None
 
                         # Generate subtitles
@@ -1205,30 +1348,37 @@ with tab_compose:
                             try:
                                 from ugckit.subtitles import generate_subtitle_file
 
-                                with st.spinner("Generating subtitles..."):
+                                with st.spinner(
+                                    "\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043e\u0432..."
+                                ):
                                     subtitle_file = generate_subtitle_file(
                                         timeline, matched_avatars, cfg
                                     )
                             except Exception as e:
-                                st.warning(f"Subtitle generation failed: {e}")
+                                st.warning(
+                                    f"\u041e\u0448\u0438\u0431\u043a\u0430 \u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u0438 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043e\u0432: {e}"
+                                )
 
-                        progress_bar = st.progress(0.0, text="Rendering...")
+                        progress_bar = st.progress(
+                            0.0, text="\u0420\u0435\u043d\u0434\u0435\u0440\u0438\u043d\u0433..."
+                        )
                         result_path = compose_video_with_progress(
                             timeline,
                             cfg,
                             progress_callback=lambda p: progress_bar.progress(
-                                p, text=f"Rendering... {p:.0%}"
+                                p,
+                                text=f"\u0420\u0435\u043d\u0434\u0435\u0440\u0438\u043d\u0433... {p:.0%}",
                             ),
                             head_videos=head_videos,
                             transparent_avatars=transparent_avatars,
                             subtitle_file=subtitle_file,
                             music_file=music_path,
                         )
-                        st.success(f"Done \u2014 {result_path.name}")
+                        st.success(f"\u0413\u043e\u0442\u043e\u0432\u043e! {result_path.name}")
 
                         with open(result_path, "rb") as vf:
                             st.download_button(
-                                "Download video",
+                                "\u0421\u043a\u0430\u0447\u0430\u0442\u044c \u0432\u0438\u0434\u0435\u043e",
                                 data=vf,
                                 file_name=result_path.name,
                                 mime="video/mp4",
@@ -1239,7 +1389,9 @@ with tab_compose:
 
         # Batch compose
         st.markdown("---")
-        if st.button("Batch render all scripts"):
+        if st.button(
+            "\u0421\u043e\u0431\u0440\u0430\u0442\u044c \u0432\u0441\u0435 \u0441\u043a\u0440\u0438\u043f\u0442\u044b"
+        ):
             for script in all_scripts:
                 s_id = script.script_id.upper()
                 s_avatars = sorted(
@@ -1249,7 +1401,9 @@ with tab_compose:
                     s_avatars = available_avatars if len(all_scripts) == 1 else []
 
                 if not s_avatars:
-                    st.warning(f"[{script.script_id}] No matching avatars, skipped.")
+                    st.warning(
+                        f"[{script.script_id}] \u041d\u0435\u0442 \u043f\u043e\u0434\u0445\u043e\u0434\u044f\u0449\u0438\u0445 \u0430\u0432\u0430\u0442\u0430\u0440\u043e\u0432, \u043f\u0440\u043e\u043f\u0443\u0441\u043a."
+                    )
                     continue
 
                 output_path = OUTPUT_DIR / f"{script.script_id}.mp4"
@@ -1260,18 +1414,22 @@ with tab_compose:
                         screencasts_dir=SCREENCASTS_DIR,
                         output_path=output_path,
                     )
-                    progress_bar = st.progress(0.0, text=f"Rendering {script.script_id}...")
+                    progress_bar = st.progress(
+                        0.0,
+                        text=f"\u0420\u0435\u043d\u0434\u0435\u0440\u0438\u043d\u0433 {script.script_id}...",
+                    )
                     result_path = compose_video_with_progress(
                         timeline,
                         cfg,
                         progress_callback=lambda p, sid=script.script_id: progress_bar.progress(
-                            p, text=f"Rendering {sid}... {p:.0%}"
+                            p,
+                            text=f"\u0420\u0435\u043d\u0434\u0435\u0440\u0438\u043d\u0433 {sid}... {p:.0%}",
                         ),
                     )
-                    st.success(f"[{script.script_id}] Done")
+                    st.success(f"[{script.script_id}] \u0413\u043e\u0442\u043e\u0432\u043e!")
                     with open(result_path, "rb") as vf:
                         st.download_button(
-                            f"Download {result_path.name}",
+                            f"\u0421\u043a\u0430\u0447\u0430\u0442\u044c {result_path.name}",
                             data=vf,
                             file_name=result_path.name,
                             mime="video/mp4",

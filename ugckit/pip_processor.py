@@ -298,3 +298,104 @@ def _create_head_enhanced(
         raise PipProcessingError(f"Enhanced head encoding failed: {result.stderr[:500]}")
 
     return out_webm
+
+
+def create_transparent_avatar(
+    avatar_path: Path,
+    output_path: Path,
+    scale: float = 0.8,
+    output_width: int = 1080,
+) -> Path:
+    """Remove avatar background and produce a WebM VP9 video with alpha.
+
+    Uses rembg to remove background from each frame (no face detection
+    or circular mask — preserves full body).
+
+    Args:
+        avatar_path: Path to avatar video file.
+        output_path: Output path (will use .webm extension).
+        scale: Scale factor relative to output_width.
+        output_width: Reference output width.
+
+    Returns:
+        Path to transparent avatar WebM file.
+
+    Raises:
+        PipProcessingError: If processing fails.
+        ImportError: If rembg/opencv not installed.
+    """
+    try:
+        import cv2
+        import numpy as np
+        from rembg import remove
+    except ImportError as e:
+        raise ImportError(
+            f"Green screen mode requires: pip install rembg opencv-python. Missing: {e}"
+        )
+
+    cap = cv2.VideoCapture(str(avatar_path))
+    if not cap.isOpened():
+        raise PipProcessingError(f"Cannot open video: {avatar_path}")
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    target_w = int(output_width * scale)
+
+    frames_rgba = []
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgba = remove(rgb)
+        rgba = cv2.resize(rgba, (target_w, int(target_w * rgba.shape[0] / rgba.shape[1])))
+        frames_rgba.append(rgba)
+
+    cap.release()
+
+    if not frames_rgba:
+        raise PipProcessingError("No frames read from video")
+
+    frame_h, frame_w = frames_rgba[0].shape[:2]
+
+    with tempfile.NamedTemporaryFile(suffix=".raw", delete=False) as raw_file:
+        raw_path = Path(raw_file.name)
+        for frame in frames_rgba:
+            raw_file.write(frame.tobytes())
+
+    out_webm = output_path.with_suffix(".webm")
+    out_webm.parent.mkdir(parents=True, exist_ok=True)
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "rgba",
+        "-s",
+        f"{frame_w}x{frame_h}",
+        "-r",
+        str(fps),
+        "-i",
+        str(raw_path),
+        "-c:v",
+        "libvpx-vp9",
+        "-pix_fmt",
+        "yuva420p",
+        "-auto-alt-ref",
+        "0",
+        "-an",
+        str(out_webm),
+    ]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+    except subprocess.TimeoutExpired:
+        raise PipProcessingError("Transparent avatar encoding timed out")
+    finally:
+        raw_path.unlink(missing_ok=True)
+
+    if result.returncode != 0:
+        raise PipProcessingError(f"Transparent avatar encoding failed: {result.stderr[:500]}")
+
+    return out_webm
