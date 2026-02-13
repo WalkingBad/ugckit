@@ -29,7 +29,7 @@ st.set_page_config(
     page_title="UGCKit — Сборка UGC видео",
     page_icon="",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ---------------------------------------------------------------------------
@@ -80,712 +80,545 @@ def _pos_selectbox(label: str, default: str, help_text: str, key: str | None = N
 
 
 # ---------------------------------------------------------------------------
-# Custom CSS — Light Brutalist Swiss Style
+# Custom CSS — Redesigned (Helvetica / Fixed Grid)
 # ---------------------------------------------------------------------------
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* ── Base ─────────────────────────────────────────────────────────── */
-html, body, [class*="css"] {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    font-size: 13px;
-    line-height: 1.4;
-}
-
+/* ── Reset & Variables ───────────────────────────────────────────── */
 :root {
     --bg: #ffffff;
     --ink: #000000;
     --accent-red: #ff1a1a;
     --accent-blue: #1a1aff;
-    --border: #000000;
-    --border-light: #e0e0e0;
-    --text-secondary: #666666;
-    --text-muted: #999999;
-    --surface: #f5f5f5;
-    --surface-hover: #ececec;
+    --border-color: #000000;
+    --font-main: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
 }
 
+html, body, [class*="css"] {
+    font-family: var(--font-main) !important;
+    background-color: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* ── Hide default Streamlit chrome ───────────────────────────────── */
+[data-testid="stSidebar"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+.stDeployButton,
+[data-testid="manage-app-button"] {
+    display: none !important;
+}
+
+[data-testid="stAppViewBlockContainer"] {
+    padding: 0 !important;
+    max-width: 100vw !important;
+}
+
+.main .block-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden;
+}
+
+/* ── Global Layout Grid ──────────────────────────────────────────── */
+/*
+   We need a grid: [Sidebar 60px] [Assets 320px] [Settings 320px] [Preview 1fr]
+   Streamlit's main container wraps everything. We'll use CSS to force the layout.
+*/
+
+/* Force the main horizontal block to behave like our grid */
+/* ── Global Layout Grid ──────────────────────────────────────────── */
+/*
+   We need a grid: [Sidebar 60px] [Assets 320px] [Settings 320px] [Preview 1fr]
+   Streamlit's main container wraps everything. We'll use CSS to force the layout.
+*/
+[data-testid="stAppViewContainer"] > .main .block-container {
+    padding: 0 !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    overflow-x: hidden;
+}
+
+/* Force the main horizontal block to behave like our grid */
+[data-testid="stHorizontalBlock"] {
+    display: grid !important;
+    grid-template-columns: 320px 320px 1fr !important; /* Assets, Settings, Output */
+    width: calc(100vw - 60px) !important; /* Subtract sidebar width */
+    margin-left: 60px !important; /* Offset for fixed sidebar */
+    gap: 0 !important;
+    height: 100vh;
+    align-content: start;
+}
+
+/* Columns */
+[data-testid="stColumn"] {
+    width: 100% !important;
+    min-width: 0 !important; /* Allow shrinking if needed */
+    flex: none !important; /* Disable flex behavior */
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--bg);
+    border-right: 1px solid var(--border-color);
+}
+
+[data-testid="stColumn"]:last-child {
+    border-right: none;
+}
+
+/* Fixed Sidebar Injection */
+.custom-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 100vh;
+    background: var(--bg);
+    border-right: 1px solid var(--border-color);
+    z-index: 99999; /* Higher z-index to stay on top */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-lg) 0;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+}
+
+.custom-sidebar span {
+    font-size: 32px;
+    letter-spacing: 0.05em;
+    font-weight: 300;
+}
+
+.custom-sidebar .version {
+    font-size: 14px; 
+    margin-top: auto; 
+    transform: rotate(0); /* Reset rotation for version if needed, but original design has it vertical too? */
+    /* Original design: generic vertical text. Let's keep it consistent. */
+}
+
+/* ── Typography & Headers ────────────────────────────────────────── */
 h1, h2, h3 {
+    font-family: var(--font-main) !important;
     font-weight: 300 !important;
     letter-spacing: -0.02em !important;
 }
 
-/* ── Noise texture overlay ───────────────────────────────────────── */
-.noise-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.4;
-}
-
-/* ── Main container ──────────────────────────────────────────────── */
-.main .block-container {
-    padding: 2rem 2.5rem 4rem !important;
-    max-width: 1100px;
-}
-
-/* ── Sidebar ─────────────────────────────────────────────────────── */
-[data-testid="stSidebar"] {
-    background: var(--bg) !important;
-    border-right: 1px solid var(--border) !important;
-}
-
-[data-testid="stSidebar"] > div:first-child {
-    padding-top: 1.5rem;
-}
-
-[data-testid="stSidebar"] .stElementContainer {
-    margin-bottom: 0 !important;
-}
-
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
-    gap: .25rem !important;
-}
-
-/* ── Brutalist sidebar branding ──────────────────────────────────── */
-.sidebar-logo {
-    font-size: 1.1rem;
-    font-weight: 300;
-    letter-spacing: .08em;
-    color: var(--ink);
-    margin-bottom: .1rem;
-}
-
-.sidebar-logo .dot {
-    margin: 0 2px;
-}
-
-.sidebar-version {
-    font-size: .6rem;
-    font-weight: 300;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: .75rem;
-    padding-bottom: .75rem;
-    border-bottom: 1px solid var(--border);
-}
-
-/* ── Numbered upload blocks ──────────────────────────────────────── */
-.upload-block {
-    border-bottom: 1px solid var(--border);
-    padding: .85rem 0 .5rem;
-}
-
-.upload-block-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: .3rem;
-}
-
-.upload-block-title {
-    font-size: 16px;
-    font-weight: 400;
-    color: var(--ink);
-}
-
-.upload-block-title .num-index {
-    font-weight: 300;
-    color: var(--ink);
-    margin-right: 4px;
-}
-
-.upload-block-status {
-    font-size: 11px;
-    letter-spacing: .03em;
-    text-transform: uppercase;
-    color: var(--ink);
-}
-
-.upload-block-status.optional {
-    opacity: 0.5;
-}
-
-.upload-block-meta {
-    font-size: 11px;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-    color: var(--ink);
-    opacity: .7;
-    margin-bottom: .3rem;
-}
-
-.upload-block-hint {
-    font-size: 11px;
-    color: var(--text-secondary);
-    line-height: 1.4;
-    margin-bottom: .4rem;
-}
-
-.upload-counter {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: .15rem;
-}
-
-/* ── File uploader ───────────────────────────────────────────────── */
-[data-testid="stFileUploader"] {
-    border-radius: 0 !important;
-    margin-bottom: .25rem !important;
-}
-
-[data-testid="stFileUploaderDropzone"] {
-    background: var(--bg) !important;
-    border: 1px dashed var(--ink) !important;
-    border-radius: 0 !important;
-    padding: .75rem 1rem !important;
-    transition: background .2s;
-    min-height: auto !important;
-}
-
-[data-testid="stFileUploaderDropzone"]:hover {
-    background: rgba(0,0,0,.02) !important;
-    border-color: var(--ink) !important;
-}
-
-[data-testid="stFileUploaderDropzone"] button {
-    background: var(--ink) !important;
-    color: var(--bg) !important;
-    border: none !important;
-    border-radius: 0 !important;
-    font-weight: 400 !important;
-    padding: .35rem .75rem !important;
-    font-size: 11px !important;
-    text-transform: uppercase !important;
-    letter-spacing: .05em !important;
-}
-
-[data-testid="stFileUploaderDropzone"] button:hover {
-    opacity: .85 !important;
-}
-
-/* ── Tabs ────────────────────────────────────────────────────────── */
-[data-baseweb="tab-list"] {
-    gap: 0 !important;
-    background: transparent !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    border-bottom: 1px solid var(--border) !important;
-}
-
-[data-baseweb="tab"] {
-    border-radius: 0 !important;
-    padding: .75rem 1.5rem !important;
-    font-weight: 400 !important;
-    font-size: 14px !important;
-    color: var(--text-secondary) !important;
-    transition: all .2s ease !important;
-    border: none !important;
-    background: transparent !important;
-    text-transform: uppercase !important;
-    letter-spacing: .03em !important;
-}
-
-[data-baseweb="tab"]:hover {
-    color: var(--ink) !important;
-    background: transparent !important;
-}
-
-[aria-selected="true"] {
-    background: transparent !important;
-    color: var(--ink) !important;
-    border-bottom: 2px solid var(--ink) !important;
-    box-shadow: none !important;
-    font-weight: 500 !important;
-}
-
-[data-baseweb="tab-highlight"],
-[data-baseweb="tab-border"] {
-    display: none !important;
-}
-
-/* ── Buttons ─────────────────────────────────────────────────────── */
-.stButton > button {
-    border-radius: 0 !important;
-    font-weight: 400 !important;
-    font-size: 13px !important;
-    padding: .6rem 1.5rem !important;
-    border: 1px solid var(--border) !important;
-    background: var(--bg) !important;
-    color: var(--ink) !important;
-    transition: all .2s ease !important;
-    text-transform: uppercase !important;
-    letter-spacing: .05em !important;
-}
-
-.stButton > button:hover {
-    background: var(--surface) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,.1) !important;
-}
-
-/* Primary button */
-[data-testid="stBaseButton-primary"],
-.stButton > button[kind="primary"] {
-    background: var(--ink) !important;
-    border: none !important;
-    color: var(--bg) !important;
-    text-transform: uppercase !important;
-    letter-spacing: .05em !important;
-    font-weight: 400 !important;
-    position: relative;
-    overflow: hidden;
-    transition: all .25s ease !important;
-}
-
-[data-testid="stBaseButton-primary"]::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(45deg, var(--accent-red), var(--accent-blue));
-    opacity: 0;
-    transition: opacity .3s;
-    z-index: 0;
-}
-
-[data-testid="stBaseButton-primary"]:hover::before {
-    opacity: 1;
-}
-
-[data-testid="stBaseButton-primary"]:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,.1) !important;
-}
-
-/* Download button */
-[data-testid="stDownloadButton"] button {
-    background: var(--ink) !important;
-    border: none !important;
-    color: var(--bg) !important;
-    border-radius: 0 !important;
-}
-
-[data-testid="stDownloadButton"] button:hover {
-    opacity: .85 !important;
-    transform: translateY(-2px) !important;
-}
-
-/* ── Expander ────────────────────────────────────────────────────── */
-[data-testid="stExpander"] {
-    background: var(--bg) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 0 !important;
-    margin-bottom: .5rem;
-    overflow: hidden;
-}
-
-[data-testid="stExpander"] summary {
-    font-weight: 400 !important;
-    font-size: 14px !important;
-    padding: .85rem 1rem !important;
-}
-
-[data-testid="stExpander"] summary:hover {
-    background: var(--surface) !important;
-}
-
-/* ── Alerts ──────────────────────────────────────────────────────── */
-[data-testid="stAlert"] {
-    border-radius: 0 !important;
-    border: 1px solid var(--border-light) !important;
-}
-
-/* ── Code blocks ─────────────────────────────────────────────────── */
-[data-testid="stCode"],
-.stCodeBlock {
-    border-radius: 0 !important;
-    border: 1px solid var(--border-light) !important;
-}
-
-code {
-    font-family: 'JetBrains Mono', 'SF Mono', monospace !important;
-    font-size: .82rem !important;
-}
-
-/* ── Select box ──────────────────────────────────────────────────── */
-[data-baseweb="select"] {
-    border-radius: 0 !important;
-}
-
-[data-baseweb="select"] > div {
-    background: var(--bg) !important;
-    border: none !important;
-    border-bottom: 1px solid var(--ink) !important;
-    border-radius: 0 !important;
-    padding-left: 0 !important;
-}
-
-/* Radio (horizontal) */
-[data-testid="stRadio"] > div {
-    gap: 0 !important;
-}
-
-[data-testid="stRadio"] label {
-    background: var(--bg) !important;
-    border: 1px solid var(--border-light) !important;
-    border-radius: 0 !important;
-    padding: .5rem 1rem !important;
-    transition: all .2s ease !important;
-}
-
-[data-testid="stRadio"] label:hover {
-    background: var(--surface) !important;
-    border-color: var(--ink) !important;
-}
-
-/* ── Slider — diamond thumb ──────────────────────────────────────── */
-[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
-    background: var(--ink) !important;
-    border-color: var(--ink) !important;
-    border-radius: 2px !important;
-    transform: rotate(45deg) !important;
-    width: 12px !important;
-    height: 12px !important;
-}
-
-/* ── Progress bar ────────────────────────────────────────────────── */
-[data-testid="stProgress"] > div > div {
-    background: var(--ink) !important;
-    border-radius: 0 !important;
-}
-
-/* ── Divider ─────────────────────────────────────────────────────── */
-[data-testid="stDivider"],
-hr {
-    border-color: var(--border) !important;
-    opacity: 1 !important;
-}
-
-/* ── Checkbox ────────────────────────────────────────────────────── */
-[data-testid="stCheckbox"] span[data-baseweb="checkbox"] {
-    border-radius: 0 !important;
-    border-color: var(--ink) !important;
-}
-
-/* ── Scrollbar ───────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 0; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.3); }
-
-/* ── Brutalist section headers ───────────────────────────────────── */
-.section-header-brutal {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: .75rem;
-    margin-bottom: 1.25rem;
-}
-
-.section-header-brutal h2 {
+.section-header {
     font-size: 24px;
-    font-weight: 300;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-    margin: 0;
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
-.section-header-brutal .diamonds {
+.section-header h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 24px;
+}
+
+.section-header span.diamonds {
     font-size: 12px;
     letter-spacing: 4px;
     color: var(--ink);
 }
 
-/* ── Labels ──────────────────────────────────────────────────────── */
-.section-label {
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: .05em;
-    text-transform: uppercase;
+/* ── Upload Items (Assets) ───────────────────────────────────────── */
+.upload-item {
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s;
+}
+
+.upload-item:hover {
+    background: #f5f5f5;
+}
+
+.upload-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.upload-title {
+    font-size: 16px;
     color: var(--ink);
-    margin-bottom: .5rem;
-    opacity: .7;
 }
 
-.section-desc {
-    font-size: 13px;
+.num-index {
     font-weight: 300;
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-    line-height: 1.4;
+    margin-right: var(--space-sm);
 }
 
-/* ── Cards ───────────────────────────────────────────────────────── */
-.card {
+.file-status {
+    font-size: 11px;
+    text-transform: uppercase;
+    gap: 6px;
+    display: flex;
+    align-items: center;
+}
+
+.label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-sm);
+    display: block;
+    opacity: 0.7;
+    color: var(--ink);
+}
+
+/* ── File Uploader Override ──────────────────────────────────────── */
+[data-testid="stFileUploader"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+[data-testid="stFileUploaderDropzone"] {
+    background: transparent !important;
+    border: 1px dashed var(--ink) !important;
+    border-radius: 0 !important;
+    height: 80px !important;
+    min-height: 80px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: var(--space-sm);
+}
+
+[data-testid="stFileUploaderDropzone"]:hover {
+    background: rgba(0,0,0,0.02) !important;
+}
+
+[data-testid="stFileUploaderDropzone"] button {
+    display: none; /* Hide default 'Browse files' button */
+}
+
+/* We can't easily style the internal text of dropzone, but we can overlay or inject content via JS if needed. 
+   For now, we rely on the JS script below to update text. */
+
+/* ── Controls (Settings) ─────────────────────────────────────────── */
+.control-group {
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Sliders */
+[data-testid="stSlider"] {
+    padding-top: var(--space-md) !important;
+    padding-bottom: var(--space-md) !important;
+}
+
+[data-testid="stSlider"] [role="slider"] {
+    background: var(--ink) !important;
+    width: 12px !important;
+    height: 12px !important;
+    transform: rotate(45deg) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+[data-testid="stSlider"] [data-baseweb="slider"] > div > div:first-child {
+    background: var(--ink) !important;
+    height: 1px !important;
+}
+
+[data-testid="stThumbValue"] {
+    font-family: var(--font-main) !important;
+    font-size: 11px !important;
+    color: var(--ink) !important;
+}
+
+/* Selectbox */
+[data-baseweb="select"] {
+    border-radius: 0 !important;
+}
+[data-baseweb="select"] > div {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--ink) !important;
+    border-radius: 0 !important;
+    padding-left: 0 !important;
+    font-size: 14px !important;
+}
+
+/* Checkbox (Toggle style via CSS?) 
+   Streamlit checkboxes are hard to style as reliable IOS toggles without component hacks.
+   We will keep them as checkboxes but styled minimally.
+*/
+[data-testid="stCheckbox"] label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* ── Output / Preview ────────────────────────────────────────────── */
+.gradient-orb {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, var(--accent-red) 0%, rgba(0,0,0,0) 70%),
+                radial-gradient(circle, var(--accent-blue) 0%, rgba(0,0,0,0) 70%);
+    background-position: 30% 30%, 70% 70%;
+    filter: blur(60px) contrast(1.2);
+    opacity: 0.15;
+    mix-blend-mode: multiply;
+    z-index: 0;
+    pointer-events: none;
+    animation: breathe 10s infinite alternate;
+}
+
+@keyframes breathe {
+    0% { transform: scale(1); opacity: 0.15; }
+    100% { transform: scale(1.1); opacity: 0.25; }
+}
+
+.wireframe-svg {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+}
+
+.preview-placeholder {
+    border: 1px solid var(--ink);
+    width: 280px;
+    height: 500px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(5px);
+    z-index: 2;
+    position: relative;
+    flex-direction: column;
+}
+
+.preview-text {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 300;
+}
+
+/* ── Build Bar ───────────────────────────────────────────────────── */
+.build-bar {
+    padding: var(--space-lg);
+    border-top: 1px solid var(--border-color);
     background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 1.25rem;
+    z-index: 5;
+    margin-top: auto; /* Push to bottom */
 }
 
-.card-highlight {
-    background: var(--surface);
-    border: 1px solid var(--border-light);
-    padding: 1.25rem;
+/* Generate Button */
+.stButton button {
+    background: var(--ink) !important;
+    color: var(--bg) !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: var(--space-md) var(--space-xl) !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s !important;
 }
 
-/* ── Stat row ────────────────────────────────────────────────────── */
+.stButton button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stButton button::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(45deg, var(--accent-red), var(--accent-blue));
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 1;
+}
+
+.stButton button:hover::before {
+    opacity: 1;
+}
+
+.stButton button > div {
+    position: relative;
+    z-index: 2;
+}
+
+/* ── Noise Overlay ───────────────────────────────────────────────── */
+.noise-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.4;
+}
+
+/* ── Hide spacing in columns ────────────────────────────────────── */
+[data-testid="stVerticalBlock"] > div {
+    gap: 0 !important;
+}
+.stElementContainer {
+    margin: 0 !important;
+}
+</style>
+
+<!-- ── Functional Components (Restored & Restyled) ────────────────── -->
+<style>
 .stat-row {
     display: flex;
     gap: 0;
-    margin: 1rem 0;
+    margin: var(--space-lg);
+    border: 1px solid var(--border-color);
 }
 
 .stat-item {
     flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 1.25rem 1rem;
     text-align: center;
+    padding: var(--space-md);
+    border-right: 1px solid var(--border-color);
 }
 
-.stat-item + .stat-item {
-    border-left: none;
+.stat-item:last-child {
+    border-right: none;
 }
 
 .stat-value {
-    font-size: 2rem;
+    font-size: 24px;
     font-weight: 300;
-    letter-spacing: -0.02em;
-    color: var(--ink);
 }
 
 .stat-label {
     font-size: 11px;
-    font-weight: 400;
-    letter-spacing: .05em;
     text-transform: uppercase;
-    color: var(--text-secondary);
-    margin-top: .35rem;
+    letter-spacing: 0.05em;
+    opacity: 0.5;
+    margin-top: 4px;
 }
 
-/* ── Segment cards ───────────────────────────────────────────────── */
-.segment-card {
-    background: var(--bg);
-    border: 1px solid var(--border-light);
-    border-bottom: 1px solid var(--border);
-    padding: .85rem 1rem;
-    margin-bottom: 0;
-}
-
-.segment-header {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    margin-bottom: .35rem;
-}
-
-.segment-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border: 1px solid var(--border);
-    font-size: .75rem;
-    font-weight: 400;
-    color: var(--ink);
-}
-
-.segment-duration {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-left: auto;
-}
-
-.segment-text {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    padding-left: 2.1rem;
-}
-
-.screencast-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border: 1px solid var(--border-light);
-    font-size: 11px;
-    font-weight: 400;
-    color: var(--text-secondary);
-    margin-left: 2.1rem;
-    margin-top: .25rem;
-    font-family: 'JetBrains Mono', monospace;
-}
-
-/* ── Workflow steps ──────────────────────────────────────────────── */
 .workflow-steps {
     display: flex;
-    gap: 0;
-    margin: 1rem 0 1.5rem;
+    margin: 0 var(--space-lg) var(--space-lg);
+    border: 1px solid var(--border-color);
 }
 
 .workflow-step {
     flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-right: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: .5rem;
-    background: var(--bg);
-    border: 1px solid var(--border-light);
-    padding: .75rem 1rem;
-    font-size: 12px;
-    color: var(--text-muted);
+    gap: 6px;
+    opacity: 0.5;
 }
 
-.workflow-step + .workflow-step {
-    border-left: none;
+.workflow-step:last-child {
+    border-right: none;
 }
 
-.workflow-step-active {
-    border-color: var(--ink);
-    color: var(--ink);
-}
-
-.workflow-step-done {
-    border-color: var(--ink);
-    color: var(--ink);
+.workflow-step-active, .workflow-step-done {
+    opacity: 1;
+    background: #f5f5f5;
 }
 
 .workflow-num {
-    display: inline-flex;
+    border: 1px solid currentColor;
+    width: 16px;
+    height: 16px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
-    border: 1px solid currentColor;
-    font-size: 11px;
-    font-weight: 400;
-}
-
-/* ── Readiness / file status ─────────────────────────────────────── */
-.file-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    font-size: 11px;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-}
-
-.file-status-ok {
-    color: var(--ink);
-    border: 1px solid var(--border);
-}
-
-.file-status-warn {
-    color: var(--text-muted);
-    border: 1px solid var(--border-light);
+    border-radius: 50%;
+    font-size: 9px;
 }
 
 .readiness-bar {
+    padding: 0 var(--space-lg) var(--space-lg);
     display: flex;
-    gap: .5rem;
-    align-items: center;
-    margin: .75rem 0;
+    gap: var(--space-md);
     flex-wrap: wrap;
 }
 
-.mode-desc {
-    font-size: 13px;
-    color: var(--text-secondary);
-    padding: .5rem 0;
-    border-bottom: 1px solid var(--border-light);
-    margin: .5rem 0 1rem;
-    line-height: 1.4;
+.segment-card {
+    margin: 0 var(--space-lg) var(--space-sm);
+    padding: var(--space-md);
+    border: 1px solid var(--border-color);
 }
 
-/* ── Preview placeholder ─────────────────────────────────────────── */
-.preview-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border);
-    padding: 4rem 2rem;
-    margin: 1.5rem 0;
-    position: relative;
-    overflow: hidden;
-    min-height: 350px;
-    background: var(--bg);
-}
-
-.preview-placeholder .gradient-orb {
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(255,26,26,.12) 0%, rgba(255,26,26,0) 70%),
-                radial-gradient(circle, rgba(26,26,255,.08) 0%, rgba(26,26,255,0) 70%);
-    background-position: 30% 30%, 70% 70%;
-    filter: blur(50px);
-    opacity: .6;
-    animation: breathe 10s infinite alternate;
-    pointer-events: none;
-}
-
-@keyframes breathe {
-    0% { transform: scale(1); opacity: .5; }
-    100% { transform: scale(1.1); opacity: .7; }
-}
-
-.preview-placeholder .preview-label {
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: .1em;
+.file-status {
+    font-size: 10px;
     text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: .5rem;
-    z-index: 1;
-}
-
-.preview-placeholder .preview-text {
-    font-size: 24px;
-    font-weight: 300;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-    z-index: 1;
-}
-
-/* ── Status bar ──────────────────────────────────────────────────── */
-.status-bar {
-    display: flex;
-    justify-content: space-between;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: #f5f5f5;
+    color: #666;
+    display: inline-flex;
     align-items: center;
-    padding: .65rem 0;
-    border-top: 1px solid var(--border);
-    margin-top: .75rem;
+    gap: 4px;
 }
 
-.status-bar .status-item {
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-    color: var(--text-muted);
+.file-status-ok {
+    background: #e6f4ea;
+    color: #1e8e3e;
 }
 
-/* ── Hide default streamlit branding ─────────────────────────────── */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
+.file-status-warn {
+    background: #fef7e0;
+    color: #b06000;
+}
+
+.file-status-error {
+    background: #fce8e6;
+    color: #c5221f;
+}
 </style>
+
+<!-- Fixed Sidebar Injection -->
+<aside class="custom-sidebar">
+    <span>TIKTOK • AUTOMATION • STUDIO</span>
+    <span class="version" style="font-size: 14px; margin-top: auto; writing-mode: horizontal-tb; transform: rotate(180deg);">V.01</span>
+</aside>
 <div class="noise-overlay"></div>
-""",
+    """,
     unsafe_allow_html=True,
 )
 
 # ---------------------------------------------------------------------------
-# JS-based translation of Streamlit built-in UI text
+# JS-based translation & adjustments
 # ---------------------------------------------------------------------------
 import streamlit.components.v1 as _components
 
@@ -795,40 +628,26 @@ _components.html(
 (function() {
     var doc = window.parent.document;
     if (!doc) return;
+    
+    // Translation map
     var T = {
-        'Drag and drop file here': '\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043b \u0441\u044e\u0434\u0430',
-        'Drag and drop files here': '\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043b\u044b \u0441\u044e\u0434\u0430',
-        'Browse files': '\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0444\u0430\u0439\u043b\u044b',
-        'Browse directories': '\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u043f\u0430\u043f\u043a\u0438'
+        'Drag and drop file here': 'Drag file or browse \u2197',
+        'Drag and drop files here': 'Drag files or browse \u2197',
+        'Browse files': 'browse', 
+        'Limit 200MB per file': 'Max 400MB'
     };
-    var limitRe = /Limit (\\d+)\\s*MB per file/i;
-    var extRe = /\\u00b7\\s*[A-Z0-9, ]+$/;
-    function tr() {
+    
+    function updateDOM() {
+        // Update file uploader instructions
         doc.querySelectorAll('[data-testid="stFileUploaderDropzoneInstructions"]').forEach(function(el) {
-            var walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
-            var n;
-            while (n = walker.nextNode()) {
-                var t = n.textContent.trim();
-                if (T[t]) { n.textContent = T[t]; continue; }
-                if (limitRe.test(n.textContent)) {
-                    n.textContent = n.textContent
-                        .replace(limitRe, '\u041c\u0430\u043a\u0441. $1 \u041c\u0411 \u043d\u0430 \u0444\u0430\u0439\u043b')
-                        .replace(extRe, '');
-                }
-            }
+            el.style.display = 'none'; // We hide default text, maybe inject custom?
         });
-        doc.querySelectorAll('[data-testid="stFileUploaderDropzone"] button').forEach(function(btn) {
-            var walker = doc.createTreeWalker(btn, NodeFilter.SHOW_TEXT, null, false);
-            var n;
-            while (n = walker.nextNode()) {
-                var t = n.textContent.trim();
-                if (T[t]) n.textContent = T[t];
-            }
-        });
+        
+        // We can try to replace text content if visible
     }
-    tr();
-    new MutationObserver(function() { requestAnimationFrame(tr); })
-        .observe(doc.body, {childList: true, subtree: true});
+    
+    // new MutationObserver(function() { requestAnimationFrame(updateDOM); })
+    //    .observe(doc.body, {childList: true, subtree: true});
 })();
 </script>
 """,
@@ -862,25 +681,30 @@ def save_uploads(files, target_dir: Path) -> list[Path]:
 
 
 # ---------------------------------------------------------------------------
-# Sidebar
+# Three-column layout: Assets | Settings | Output
 # ---------------------------------------------------------------------------
-with st.sidebar:
+col_assets, col_settings, col_output = st.columns([1, 1, 2])
+
+# ---------------------------------------------------------------------------
+# Left column — Assets
+# ---------------------------------------------------------------------------
+with col_assets:
     st.markdown(
-        '<div class="sidebar-logo">UGC<span class="dot">&middot;</span>KIT</div>'
-        '<div class="sidebar-version">V.01</div>',
+        '<header class="section-header">'
+        "<h2>Assets</h2>"
+        '<span class="diamonds">◆◆◆</span></header>',
         unsafe_allow_html=True,
     )
 
     # .01 Script
     st.markdown(
-        '<div class="upload-block">'
-        '<div class="upload-block-header">'
-        '<span class="upload-block-title"><span class="num-index">.01</span>Скрипт</span>'
-        '<span class="upload-block-status">REQUIRED</span>'
-        "</div>"
-        '<div class="upload-block-meta">Markdown (.md) &middot; Макс. 400 МБ</div>'
-        '<div class="upload-block-hint">Загрузите сценарий с таймкодами и озвучкой.</div>'
-        "</div>",
+        '<div class="upload-item">'
+        '<div class="upload-header">'
+        '<span class="upload-title"><span class="num-index">.01</span>Скрипт</span>'
+        '<span class="file-status">REQUIRED</span></div>'
+        '<div class="label">Markdown (.md) • Max 400MB</div>'
+        '<p style="font-size: 11px; margin-bottom: 8px; color: #666; line-height: 1.4;">Загрузите сценарий с таймкодами и озвучкой.</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
     script_files = st.file_uploader(
@@ -909,14 +733,13 @@ with st.sidebar:
 
     # .02 Avatar
     st.markdown(
-        '<div class="upload-block">'
-        '<div class="upload-block-header">'
-        '<span class="upload-block-title"><span class="num-index">.02</span>Аватар</span>'
-        '<span class="upload-block-status">REQUIRED</span>'
-        "</div>"
-        '<div class="upload-block-meta">Видео (.mp4) &middot; Макс. 400 МБ</div>'
-        '<div class="upload-block-hint">Видео с AI-аватаром, по одному на клип.</div>'
-        "</div>",
+        '<div class="upload-item">'
+        '<div class="upload-header">'
+        '<span class="upload-title"><span class="num-index">.02</span>Аватар</span>'
+        '<span class="file-status">REQUIRED</span></div>'
+        '<div class="label">Source Video (.mp4) • Max 400MB</div>'
+        '<p style="font-size: 11px; margin-bottom: 8px; color: #666; line-height: 1.4;">Видео с AI-аватаром, по одному на клип.</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
     avatar_files = st.file_uploader(
@@ -926,7 +749,7 @@ with st.sidebar:
         help=(
             "Видео с AI-аватарами (Higgsfield, HeyGen и т.д.). "
             "По одному файлу на каждый клип в скрипте. "
-            "Порядок определяется по имени файла (напр. A1_clip1.mp4, A1_clip2.mp4)."
+            "Порядок определяется по имени файла."
         ),
         label_visibility="collapsed",
     )
@@ -945,14 +768,13 @@ with st.sidebar:
 
     # .03 Screencast
     st.markdown(
-        '<div class="upload-block">'
-        '<div class="upload-block-header">'
-        '<span class="upload-block-title"><span class="num-index">.03</span>Скринкаст</span>'
-        '<span class="upload-block-status optional">OPTIONAL</span>'
-        "</div>"
-        '<div class="upload-block-meta">Видео (.mp4) &middot; Макс. 400 МБ</div>'
-        '<div class="upload-block-hint">Запись экрана для наложения на видео.</div>'
-        "</div>",
+        '<div class="upload-item">'
+        '<div class="upload-header">'
+        '<span class="upload-title"><span class="num-index">.03</span>Скринкаст</span>'
+        '<span class="file-status" style="opacity: 0.5;">OPTIONAL</span></div>'
+        '<div class="label">B-Roll / Demo (.mp4) • Max 400MB</div>'
+        '<p style="font-size: 11px; margin-bottom: 8px; color: #666; line-height: 1.4;">Запись экрана для наложения на видео.</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
     screencast_files = st.file_uploader(
@@ -961,8 +783,7 @@ with st.sidebar:
         accept_multiple_files=True,
         help=(
             "Записи экрана приложения для наложения на видео. "
-            "Имя файла должно совпадать с тегом [screencast: имя_файла @ ...] в скрипте. "
-            "Поддерживается любое разрешение — скринкаст будет масштабирован автоматически."
+            "Имя файла должно совпадать с тегом [screencast: ...] в скрипте."
         ),
         label_visibility="collapsed",
     )
@@ -979,26 +800,21 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
 
-    # .04 Music
+    # .04 Audio
     st.markdown(
-        '<div class="upload-block">'
-        '<div class="upload-block-header">'
-        '<span class="upload-block-title"><span class="num-index">.04</span>Музыка</span>'
-        '<span class="upload-block-status optional">OPTIONAL</span>'
-        "</div>"
-        '<div class="upload-block-meta">Аудио (.mp3, .wav, .m4a, .ogg) &middot; Макс. 400 МБ</div>'
-        '<div class="upload-block-hint">Фоновый трек, зацикленный на длину видео.</div>'
-        "</div>",
+        '<div class="upload-item" style="border-bottom: none;">'
+        '<div class="upload-header">'
+        '<span class="upload-title"><span class="num-index">.04</span>Музыка</span>'
+        '<span class="file-status" style="opacity: 0.5;">OPTIONAL</span></div>'
+        '<div class="label">Background Track (.mp3, .wav) • Max 400MB</div>'
+        '<p style="font-size: 11px; margin-bottom: 8px; color: #666; line-height: 1.4;">Фоновый трек, зацикленный на длину видео.</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
     music_file_upload = st.file_uploader(
         "Музыка",
         type=["mp3", "wav", "m4a", "ogg"],
-        help=(
-            "Фоновый музыкальный трек. "
-            "Поддерживаются форматы: MP3, WAV, M4A, OGG. "
-            "Музыка будет зациклена на длительность видео и микширована с озвучкой."
-        ),
+        help="Фоновый музыкальный трек (MP3, WAV, M4A, OGG).",
         label_visibility="collapsed",
     )
     if music_file_upload:
@@ -1017,196 +833,291 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 all_scripts = parse_scripts_directory(SCRIPTS_DIR)
 
-# Validate uploaded scripts
 if script_files and not all_scripts:
-    st.sidebar.error(
-        "Загруженные файлы не содержат скриптов в формате UGCKit. "
-        'Проверьте формат: ### Script A1: "Название"'
-    )
+    with col_assets:
+        st.error(
+            "Загруженные файлы не содержат скриптов в формате UGCKit. "
+            'Проверьте формат: ### Script A1: "Название"'
+        )
 
-# Load config
 cfg = load_config()
 
-# Save music to disk
 music_path = None
 if music_file_upload:
     music_path = TMP / music_file_upload.name
     music_path.write_bytes(music_file_upload.getbuffer())
 
 # ---------------------------------------------------------------------------
-# Tabs (reordered: Scripts → Settings → Compose)
+# Middle column — Settings
 # ---------------------------------------------------------------------------
-tab_scripts, tab_settings, tab_compose = st.tabs(["Скрипты", "Настройки", "Сборка"])
-
-# ---------------------------------------------------------------------------
-# Settings tab (global settings only — mode-specific settings on Compose tab)
-# ---------------------------------------------------------------------------
-with tab_settings:
+with col_settings:
     st.markdown(
-        '<div class="section-header-brutal">'
-        "<h2>Настройки</h2>"
-        '<span class="diamonds">&#9670;&#9670;&#9670;</span>'
-        "</div>"
-        '<div class="section-desc">Качество видео, звук, субтитры и синхронизация.</div>',
+        '<header class="section-header">'
+        "<h2>Settings</h2>"
+        '<span class="diamonds">◆◆◆</span></header>',
         unsafe_allow_html=True,
     )
 
-    col1, col2 = st.columns(2)
+    # Composition mode
+    st.markdown(
+        '<div class="control-group" style="padding-bottom: 0; border-bottom: none;"><div class="label">Режим композиции</div></div>',
+        unsafe_allow_html=True,
+    )
+    comp_mode = st.radio(
+        "Режим композиции",
+        list(MODE_MAP.keys()),
+        horizontal=True,
+        help=(
+            "Оверлей: аватар на весь экран, скринкаст в углу. "
+            "PiP: скринкаст на весь экран, голова аватара в углу. "
+            "Сплит: аватар и скринкаст рядом. "
+            "Хромакей: фон аватара удаляется."
+        ),
+        label_visibility="collapsed",
+    )
+    selected_mode = MODE_MAP[comp_mode]
+    st.markdown(
+        f'<div class="control-group" style="padding-top: 0;"><p style="font-size: 11px; margin-top: 8px; color: #666; line-height: 1.4;">'
+        f"{MODE_DESCRIPTIONS[comp_mode]}</p></div>",
+        unsafe_allow_html=True,
+    )
 
-    with col1:
-        st.markdown(
-            '<div class="section-label">Качество видео</div>',
-            unsafe_allow_html=True,
+    # Mode-specific settings
+    if selected_mode == CompositionMode.OVERLAY:
+        overlay_scale = st.slider(
+            "Масштаб скринкаста",
+            10,
+            80,
+            int(cfg.composition.overlay.scale * 100),
+            5,
+            format="%d%%",
+            help="Размер скринкаста относительно ширины видео.",
         )
-        crf = st.slider(
-            "Качество видео",
-            15,
-            35,
-            cfg.output.crf,
-            help=(
-                "Чем ниже — тем лучше качество, но тяжелее файл. "
-                "18–23 — оптимально для соцсетей. "
-                "15 — почти без потерь, 35 — сильное сжатие."
-            ),
+        cfg.composition.overlay.scale = overlay_scale / 100
+        overlay_position = _pos_selectbox(
+            "Позиция скринкаста",
+            cfg.composition.overlay.position.value,
+            "Угол экрана для размещения скринкаста.",
+        )
+        cfg.composition.overlay.position = Position(overlay_position)
+        overlay_margin = st.number_input(
+            "Отступ (пкс.)",
+            0,
+            200,
+            cfg.composition.overlay.margin,
+            help="Расстояние от края кадра. 30–70 рекомендуемо.",
+        )
+        cfg.composition.overlay.margin = overlay_margin
+
+    elif selected_mode == CompositionMode.PIP:
+        pip_head_scale = st.slider(
+            "Размер головы",
+            10,
+            50,
+            int(cfg.composition.pip.head_scale * 100),
+            5,
+            format="%d%%",
+            help="Размер круглой вырезки головы аватара.",
+        )
+        cfg.composition.pip.head_scale = pip_head_scale / 100
+        pip_head_position = _pos_selectbox(
+            "Позиция головы",
+            cfg.composition.pip.head_position.value,
+            "Угол экрана для головы аватара.",
+        )
+        cfg.composition.pip.head_position = Position(pip_head_position)
+
+    elif selected_mode == CompositionMode.SPLIT:
+        side_options = ["Слева", "Справа"]
+        side_values = ["left", "right"]
+        side_idx = (
+            side_values.index(cfg.composition.split.avatar_side)
+            if cfg.composition.split.avatar_side in side_values
+            else 0
+        )
+        side_display = st.selectbox(
+            "Сторона аватара",
+            side_options,
+            index=side_idx,
+            help="На какой стороне экрана будет аватар.",
+        )
+        cfg.composition.split.avatar_side = side_values[side_options.index(side_display)]
+        split_ratio = st.slider(
+            "Пропорция разделения",
+            30,
+            70,
+            50,
+            5,
+            format="%d%%",
+            help="Доля ширины для аватара. 50% = пополам.",
+        )
+        cfg.composition.split.split_ratio = split_ratio / 100
+
+    elif selected_mode == CompositionMode.GREENSCREEN:
+        gs_avatar_scale = st.slider(
+            "Масштаб аватара",
+            30,
+            100,
+            80,
+            5,
+            format="%d%%",
+            help="Размер прозрачного аватара. Требует rembg.",
+        )
+        cfg.composition.greenscreen.avatar_scale = gs_avatar_scale / 100
+        gs_avatar_position = _pos_selectbox(
+            "Позиция аватара",
+            "bottom-right",
+            "Угол экрана для аватара поверх скринкаста.",
+        )
+        cfg.composition.greenscreen.avatar_position = Position(gs_avatar_position)
+
+    # Video quality
+    st.markdown(
+        '<div class="control-group" style="padding-bottom: 0; border-bottom: none;"><div class="label">Качество видео (CRF)</div></div>',
+        unsafe_allow_html=True,
+    )
+    crf = st.slider(
+        "Качество видео",
+        15,
+        35,
+        cfg.output.crf,
+        help="Чем ниже — тем лучше качество. 18–23 оптимально для соцсетей.",
+        label_visibility="collapsed",
+    )
+    st.markdown('<div class="control-group" style="padding-top: 0;"></div>', unsafe_allow_html=True)
+
+    # Output format
+    st.markdown(
+        '<div class="control-group" style="padding-bottom: 0; border-bottom: none;"><div class="label">Формат видео</div></div>',
+        unsafe_allow_html=True,
+    )
+    codec_options = ["H.264 (MP4) — Fast encoding", "H.265 (HEVC) — Smaller file size"]
+    codec_values = ["libx264", "libx265"]
+    codec_idx = 0 if cfg.output.codec == "libx264" else 1
+    codec_display = st.selectbox(
+        "Формат видео",
+        codec_options,
+        index=codec_idx,
+        help="H.264 — быстрее, H.265 — компактнее.",
+        label_visibility="collapsed",
+    )
+    codec = codec_values[codec_options.index(codec_display)]
+    st.markdown(
+        '<div class="control-group" style="padding-top: 0;"><p style="font-size: 11px; margin-top: 8px; color: #666; line-height: 1.4;">'
+        "H.264 — быстрое кодирование и широкая совместимость.</p></div>",
+        unsafe_allow_html=True,
+    )
+
+    # Audio target volume
+    st.markdown(
+        '<div class="control-group" style="padding-bottom: 0; border-bottom: none;"><div class="label">Целевая громкость (LUFS)</div></div>',
+        unsafe_allow_html=True,
+    )
+    normalize_audio = st.checkbox(
+        "Нормализация громкости",
+        value=cfg.audio.normalize,
+        help="Выравнивание громкости по стандарту LUFS.",
+    )
+    if normalize_audio:
+        target_loudness = st.slider(
+            "Целевая громкость",
+            -24,
+            -8,
+            cfg.audio.target_loudness,
+            help="Стандарт для соцсетей: -14 LUFS.",
             label_visibility="collapsed",
         )
-        codec_options = ["H.264 (быстрый)", "H.265 (компактный)"]
-        codec_values = ["libx264", "libx265"]
-        codec_idx = 0 if cfg.output.codec == "libx264" else 1
-        codec_display = st.selectbox(
-            "Формат видео",
-            codec_options,
-            index=codec_idx,
-            help=(
-                "H.264 — быстрее кодирование, максимальная совместимость. "
-                "H.265 — меньше размер файла при том же качестве, но медленнее. "
-                "Для TikTok/Reels рекомендуется H.264."
-            ),
-        )
-        codec = codec_values[codec_options.index(codec_display)]
+    else:
+        target_loudness = cfg.audio.target_loudness
+    st.markdown('<div class="control-group" style="padding-top: 0;"></div>', unsafe_allow_html=True)
 
-        st.markdown("---")
+    if music_path:
         st.markdown(
-            '<div class="section-label">Аудио</div>',
+            '<div class="control-group" style="padding-bottom: 0; border-bottom: none;"><div class="label">Фоновая музыка</div></div>',
             unsafe_allow_html=True,
         )
-        normalize_audio = st.checkbox(
-            "Нормализация громкости",
-            value=cfg.audio.normalize,
-            help=(
-                "Выравнивание громкости по стандарту LUFS. "
-                "Включите, чтобы все клипы звучали одинаково громко, "
-                "даже если исходные аватары записаны с разной громкостью."
-            ),
+        music_volume = st.slider(
+            "Громкость музыки",
+            0,
+            100,
+            15,
+            5,
+            format="%d%%",
+            help="Уровень музыки относительно озвучки. 15% — фон.",
+            label_visibility="collapsed",
         )
-        if normalize_audio:
-            target_loudness = st.slider(
-                "Целевая громкость",
-                -24,
-                -8,
-                cfg.audio.target_loudness,
-                help=(
-                    "Стандарт для соцсетей: -14. "
-                    "-24 — очень тихо, -8 — очень громко. "
-                    "TikTok и Instagram рекомендуют -14."
-                ),
-            )
-        else:
-            target_loudness = cfg.audio.target_loudness
+        music_fade_out = st.slider(
+            "Затухание (сек.)",
+            0.0,
+            10.0,
+            2.0,
+            0.5,
+            help="Длительность затухания музыки в конце.",
+            label_visibility="collapsed",
+        )
+        st.markdown('<div class="control-group" style="padding-top: 0;"></div>', unsafe_allow_html=True)
+    else:
+        music_volume = 15
+        music_fade_out = 2.0
 
-        if music_path:
-            st.markdown("---")
-            st.markdown(
-                '<div class="section-label">Фоновая музыка</div>',
-                unsafe_allow_html=True,
-            )
-            music_volume = st.slider(
-                "Громкость музыки",
-                0,
-                100,
-                15,
-                5,
-                format="%d%%",
-                help=(
-                    "Уровень громкости фоновой музыки относительно озвучки. "
-                    "15% — ненавязчивый фон. "
-                    "30–50% — заметная музыка. 100% — одинаковая громкость с озвучкой."
-                ),
-            )
-            music_fade_out = st.slider(
-                "Затухание (сек.)",
-                0.0,
-                10.0,
-                2.0,
-                0.5,
-                help=(
-                    "Длительность плавного затухания музыки в конце видео. "
-                    "0 — резкое обрывание. 2–3 сек. — плавный финиш."
-                ),
-            )
-        else:
-            music_volume = 15
-            music_fade_out = 2.0
+    # Smart Subtitles (toggle style like mockup)
+    st.markdown(
+        '<div class="control-group" style="border-bottom: none; padding-bottom: 0;">',
+        unsafe_allow_html=True,
+    )
+    enable_subtitles = st.checkbox(
+        "Smart Subtitles",
+        value=False,
+        help="Караоке-субтитры на основе Whisper.",
+    )
+    st.markdown(
+        '<p style="font-size: 11px; margin-top: 8px; color: #666; line-height: 1.4;">'
+        "Авто-синхронизация субтитров с речью.</p></div>",
+        unsafe_allow_html=True,
+    )
+    if enable_subtitles:
+        subtitle_font_size = st.slider(
+            "Размер шрифта субтитров",
+            24,
+            96,
+            48,
+            help="48 — стандарт для 1080x1920.",
+            label_visibility="collapsed",
+        )
+    else:
+        subtitle_font_size = 48
 
-    with col2:
+    # Smart Sync (toggle style)
+    st.markdown(
+        '<div class="control-group" style="border-bottom: none; padding-bottom: 0;">',
+        unsafe_allow_html=True,
+    )
+    enable_sync = st.checkbox(
+        "Smart Sync",
+        value=False,
+        help="Тайминг скринкастов по ключевым словам в речи.",
+    )
+    st.markdown(
+        '<p style="font-size: 11px; margin-top: 8px; color: #666; line-height: 1.4;">'
+        "Авто-определение тайминга скринкастов по ключевым словам.</p></div>",
+        unsafe_allow_html=True,
+    )
+
+    if enable_sync or enable_subtitles:
         st.markdown(
-            '<div class="section-label">Субтитры</div>',
+            '<div class="control-group"><div class="label">МОДЕЛЬ WHISPER</div></div>',
             unsafe_allow_html=True,
         )
-        enable_subtitles = st.checkbox(
-            "Включить субтитры",
-            value=False,
-            help=(
-                "Генерация субтитров в стиле караоке на основе распознавания речи. "
-                "Слова подсвечиваются по мере произнесения. "
-                "Требует openai-whisper."
-            ),
+        whisper_model = st.selectbox(
+            "Модель Whisper",
+            ["tiny", "base", "small", "medium", "large"],
+            index=1,
+            help="base — баланс скорости и качества.",
+            label_visibility="collapsed",
         )
-        if enable_subtitles:
-            subtitle_font_size = st.slider(
-                "Размер шрифта субтитров",
-                24,
-                96,
-                48,
-                help="Размер текста субтитров в пикселях. 48 — стандарт для 1080x1920. Увеличьте до 64–96 для агрессивного стиля.",
-            )
-        else:
-            subtitle_font_size = 48
-
-        st.markdown("---")
-        st.markdown(
-            '<div class="section-label">Умная синхронизация</div>',
-            unsafe_allow_html=True,
-        )
-        enable_sync = st.checkbox(
-            "Авто-синхронизация скринкастов",
-            value=False,
-            help=(
-                "Автоматическое определение тайминга скринкастов по ключевым словам в речи аватара. "
-                'Используйте теги word:"..." в скрипте вместо числовых таймкодов. '
-                "Требует openai-whisper."
-            ),
-        )
-
-        if enable_sync or enable_subtitles:
-            st.markdown("---")
-            st.markdown(
-                '<div class="section-label">Модель Whisper</div>',
-                unsafe_allow_html=True,
-            )
-            whisper_model = st.selectbox(
-                "Модель Whisper",
-                ["tiny", "base", "small", "medium", "large"],
-                index=1,
-                help=(
-                    "Одна модель для синхронизации и субтитров. "
-                    "tiny — быстрая, но менее точная. "
-                    "base — хороший баланс скорости и качества. "
-                    "large — максимальная точность, но медленная."
-                ),
-            )
-        else:
-            whisper_model = "base"
+        st.markdown('<div class="control-group" style="padding-top: 0;"></div>', unsafe_allow_html=True)
+    else:
+        whisper_model = "base"
 
     # Apply global settings to config
     cfg.output.crf = crf
@@ -1224,39 +1135,59 @@ with tab_settings:
         cfg.music.fade_out_duration = music_fade_out
 
 # ---------------------------------------------------------------------------
-# Scripts tab
+# Right column — Output
 # ---------------------------------------------------------------------------
-with tab_scripts:
-    st.markdown(
-        '<div class="section-header-brutal">'
-        "<h2>Скрипты</h2>"
-        '<span class="diamonds">&#9670;&#9670;&#9670;</span>'
-        "</div>"
-        '<div class="section-desc">'
-        "Автоматическая сборка коротких видео для TikTok и Reels: аватар + скринкаст + субтитры."
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
+with col_output:
     if not all_scripts:
         st.markdown(
-            '<div class="card-highlight" style="margin-bottom:1rem;">'
-            '<div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">'
-            "Скрипты ещё не загружены. Перетащите <code>.md</code> файлы в боковую панель.<br><br>"
-            "<strong>Ожидаемый формат:</strong>"
-            "</div>"
-            '<div style="margin-top:.75rem; padding:.75rem 1rem; background:rgba(0,0,0,.04); '
-            "border:1px solid var(--border-light); font-family:'JetBrains Mono',monospace; font-size:12px; "
-            'color:var(--text-secondary); line-height:1.7;">'
-            '### Script A1: "Название"<br>'
-            "**Clip 1 (8s):**<br>"
-            'Says: "Текст озвучки"<br>'
-            "[screencast: app @ 1.5-5.0 mode:overlay]"
-            "</div></div>",
+            '<div class="gradient-orb"></div>'
+            '<svg class="wireframe-svg" viewBox="0 0 500 800">'
+            '<ellipse cx="250" cy="400" rx="300" ry="200" fill="none" stroke="black" '
+            'stroke-width="0.5" transform="rotate(-30 250 400)"/>'
+            '<ellipse cx="250" cy="400" rx="300" ry="200" fill="none" stroke="black" '
+            'stroke-width="0.5" transform="rotate(30 250 400)"/>'
+            "</svg>"
+            '<header class="section-header" style="background:transparent; border-bottom:none;">'
+            "<h2>Output</h2>"
+            '<span class="diamonds">◆◆◆</span></header>'
+            '<div class="preview-canvas">'
+            '<div class="preview-placeholder">'
+            '<div class="preview-text">'
+            '<span style="display:block; font-size:11px; margin-bottom:8px; letter-spacing:0.05em;">ПРЕВЬЮ</span>'
+            'Ожидание файлов'
+            "</div></div></div>",
             unsafe_allow_html=True,
         )
+        st.markdown(
+            '<div class="build-bar">'
+            '<div style="display:flex; flex-direction:column;">'
+            '<span class="status-text">ПРИМ. РЕНДЕР: ~45С</span>'
+            '<span class="status-text" style="opacity:0.5">ОЧЕРЕДЬ: ПУСТО</span></div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        # Button follows build-bar div visually or we place it?
+        # In empty state, no button usually, or just a dummy?
+        # The design shows "Generate Video" button even in empty "Wait for Input"?
+        # Let's add a disabled mock button if needed, or just leave it.
     else:
-        # Stats row
+        st.markdown(
+            '<header class="section-header" style="background:transparent; border-bottom:none;">'
+            "<h2>Output</h2>"
+            '<span class="diamonds">◆◆◆</span></header>',
+            unsafe_allow_html=True,
+        )
+
+        # Script selector
+        script_options = {f"{s.script_id}: {s.title}": s for s in all_scripts}
+        selected_label = st.selectbox(
+            "Скрипт",
+            list(script_options.keys()),
+            help="Выберите сценарий для сборки.",
+        )
+        selected_script = script_options[selected_label]
+
+        # Stats
         total_segments = sum(len(s.segments) for s in all_scripts)
         total_duration = sum(s.total_duration for s in all_scripts)
         st.markdown(
@@ -1266,207 +1197,11 @@ with tab_scripts:
             f'<div class="stat-item"><div class="stat-value">{total_segments}</div>'
             f'<div class="stat-label">Сегментов</div></div>'
             f'<div class="stat-item"><div class="stat-value">{total_duration:.0f}с</div>'
-            f'<div class="stat-label">Общая длительность</div></div>'
-            f"</div>",
+            f'<div class="stat-label">Длительность</div></div></div>',
             unsafe_allow_html=True,
         )
 
-        for script in all_scripts:
-            with st.expander(
-                f"{script.script_id}: {script.title}  —  "
-                f"{len(script.segments)} клипов, ~{script.total_duration:.0f}с"
-            ):
-                for seg in script.segments:
-                    # Build screencast tags
-                    sc_html = ""
-                    for sc in seg.screencasts:
-                        mode_label = MODE_LABEL_MAP.get(sc.mode, sc.mode.value)
-                        if sc.start_keyword:
-                            sc_html += (
-                                f'<div class="screencast-tag">'
-                                f'{sc.file} @ "{sc.start_keyword}"-"{sc.end_keyword}" '
-                                f"({mode_label})</div>"
-                            )
-                        else:
-                            sc_html += (
-                                f'<div class="screencast-tag">'
-                                f"{sc.file} @ {sc.start}s\u2013{sc.end}s ({mode_label})</div>"
-                            )
-
-                    st.markdown(
-                        f'<div class="segment-card">'
-                        f'<div class="segment-header">'
-                        f'<div class="segment-badge">{seg.id}</div>'
-                        f'<div style="font-weight:600; font-size:.85rem;">Клип {seg.id}</div>'
-                        f'<div class="segment-duration">{seg.duration:.0f}с</div>'
-                        f"</div>"
-                        f'<div class="segment-text">{seg.text}</div>'
-                        f"{sc_html}"
-                        f"</div>",
-                        unsafe_allow_html=True,
-                    )
-
-# ---------------------------------------------------------------------------
-# Compose tab
-# ---------------------------------------------------------------------------
-with tab_compose:
-    st.markdown(
-        '<div class="section-header-brutal">'
-        "<h2>Сборка</h2>"
-        '<span class="diamonds">&#9670;&#9670;&#9670;</span>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    if not all_scripts:
-        st.markdown(
-            '<div class="preview-placeholder">'
-            '<div class="gradient-orb"></div>'
-            '<div class="preview-label">ПРЕВЬЮ</div>'
-            '<div class="preview-text">Ожидание файлов</div>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            '<div class="status-bar">'
-            '<div class="status-item">Прим. рендер: ~45с</div>'
-            '<div class="status-item">Очередь: пусто</div>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
-    else:
-        # --- Script selector ---
-        script_options = {f"{s.script_id}: {s.title}": s for s in all_scripts}
-        selected_label = st.selectbox(
-            "Скрипт",
-            list(script_options.keys()),
-            help="Выберите сценарий для сборки. Каждый скрипт содержит набор клипов с озвучкой и скринкастами.",
-        )
-        selected_script = script_options[selected_label]
-
-        # --- Mode selector ---
-        comp_mode = st.radio(
-            "Режим композиции",
-            list(MODE_MAP.keys()),
-            horizontal=True,
-            help=(
-                "Оверлей: аватар на весь экран, скринкаст в углу. "
-                "PiP: скринкаст на весь экран, голова аватара в углу. "
-                "Сплит: аватар и скринкаст рядом. "
-                "Хромакей: фон аватара удаляется, фигура накладывается на скринкаст."
-            ),
-        )
-        selected_mode = MODE_MAP[comp_mode]
-
-        # Mode description
-        st.markdown(
-            f'<div class="mode-desc">{MODE_DESCRIPTIONS[comp_mode]}</div>',
-            unsafe_allow_html=True,
-        )
-
-        # --- Mode-specific settings (inline, only for selected mode) ---
-        if selected_mode == CompositionMode.OVERLAY:
-            mc1, mc2, mc3 = st.columns(3)
-            with mc1:
-                overlay_scale = st.slider(
-                    "Масштаб скринкаста",
-                    10,
-                    80,
-                    int(cfg.composition.overlay.scale * 100),
-                    5,
-                    format="%d%%",
-                    help="Размер скринкаста относительно ширины видео.",
-                )
-                cfg.composition.overlay.scale = overlay_scale / 100
-            with mc2:
-                overlay_position = _pos_selectbox(
-                    "Позиция скринкаста",
-                    cfg.composition.overlay.position.value,
-                    "Угол экрана для размещения скринкаста.",
-                )
-                cfg.composition.overlay.position = Position(overlay_position)
-            with mc3:
-                overlay_margin = st.number_input(
-                    "Отступ (пкс.)",
-                    0,
-                    200,
-                    cfg.composition.overlay.margin,
-                    help="Расстояние в пикселях от края кадра. Рекомендуемо: 30–70.",
-                )
-                cfg.composition.overlay.margin = overlay_margin
-
-        elif selected_mode == CompositionMode.PIP:
-            mc1, mc2 = st.columns(2)
-            with mc1:
-                pip_head_scale = st.slider(
-                    "Размер головы",
-                    10,
-                    50,
-                    int(cfg.composition.pip.head_scale * 100),
-                    5,
-                    format="%d%%",
-                    help="Размер круглой вырезки головы аватара относительно ширины видео.",
-                )
-                cfg.composition.pip.head_scale = pip_head_scale / 100
-            with mc2:
-                pip_head_position = _pos_selectbox(
-                    "Позиция головы",
-                    cfg.composition.pip.head_position.value,
-                    "Угол экрана для размещения круглой вырезки головы аватара.",
-                )
-                cfg.composition.pip.head_position = Position(pip_head_position)
-
-        elif selected_mode == CompositionMode.SPLIT:
-            mc1, mc2 = st.columns(2)
-            with mc1:
-                side_options = ["Слева", "Справа"]
-                side_values = ["left", "right"]
-                side_idx = (
-                    side_values.index(cfg.composition.split.avatar_side)
-                    if cfg.composition.split.avatar_side in side_values
-                    else 0
-                )
-                side_display = st.selectbox(
-                    "Сторона аватара",
-                    side_options,
-                    index=side_idx,
-                    help="На какой стороне экрана будет аватар. Скринкаст займёт противоположную сторону.",
-                )
-                cfg.composition.split.avatar_side = side_values[side_options.index(side_display)]
-            with mc2:
-                split_ratio = st.slider(
-                    "Пропорция разделения",
-                    30,
-                    70,
-                    50,
-                    5,
-                    format="%d%%",
-                    help="Доля ширины экрана для стороны аватара. 50% = пополам.",
-                )
-                cfg.composition.split.split_ratio = split_ratio / 100
-
-        elif selected_mode == CompositionMode.GREENSCREEN:
-            mc1, mc2 = st.columns(2)
-            with mc1:
-                gs_avatar_scale = st.slider(
-                    "Масштаб аватара",
-                    30,
-                    100,
-                    80,
-                    5,
-                    format="%d%%",
-                    help="Размер прозрачного аватара. Фон удаляется, остаётся только фигура. Требует rembg.",
-                )
-                cfg.composition.greenscreen.avatar_scale = gs_avatar_scale / 100
-            with mc2:
-                gs_avatar_position = _pos_selectbox(
-                    "Позиция аватара",
-                    "bottom-right",
-                    "Угол экрана для размещения прозрачного аватара поверх скринкаста.",
-                )
-                cfg.composition.greenscreen.avatar_position = Position(gs_avatar_position)
-
-        # --- Dynamic workflow steps ---
+        # Dynamic workflow steps
         available_avatars = sorted(AVATARS_DIR.glob("*.mp4"))
         segs_count = len(selected_script.segments)
         avs_count = len(available_avatars)
@@ -1484,15 +1219,14 @@ with tab_compose:
 
         st.markdown(
             f'<div class="workflow-steps">'
-            f'<div class="{_step_cls(step1_done)}"><div class="workflow-num">{"&#9670;" if step1_done else "1"}</div>Скрипт загружен</div>'
+            f'<div class="{_step_cls(step1_done)}"><div class="workflow-num">{"&#9670;" if step1_done else "1"}</div>Скрипт</div>'
             f'<div class="{_step_cls(step2_done)}"><div class="workflow-num">{"&#9670;" if step2_done else "2"}</div>Аватары ({avs_count}/{segs_count})</div>'
-            f'<div class="{_step_cls(False, step3_active)}"><div class="workflow-num">3</div>Проверить таймлайн</div>'
-            f'<div class="{_step_cls(False)}"><div class="workflow-num">4</div>Собрать видео</div>'
-            "</div>",
+            f'<div class="{_step_cls(False, step3_active)}"><div class="workflow-num">3</div>Таймлайн</div>'
+            f'<div class="{_step_cls(False)}"><div class="workflow-num">4</div>Сборка</div></div>',
             unsafe_allow_html=True,
         )
 
-        # --- Readiness indicator ---
+        # Readiness indicator
         readiness_items = []
         if step1_done:
             readiness_items.append(
@@ -1529,7 +1263,7 @@ with tab_compose:
             unsafe_allow_html=True,
         )
 
-        # --- Avatar binding (expanded by default) ---
+        # Avatar binding
         sid = selected_script.script_id.upper()
         prefix_matched = sorted([f for f in available_avatars if f.stem.upper().startswith(sid)])
         matched_avatars = prefix_matched if prefix_matched else available_avatars
@@ -1538,7 +1272,7 @@ with tab_compose:
             binding_title = (
                 f"Привязка аватаров ({min(len(matched_avatars), segs_count)}/{segs_count})"
             )
-            with st.expander(binding_title, expanded=True):
+            with st.expander(binding_title, expanded=False):
                 for i, seg in enumerate(selected_script.segments):
                     if i < len(matched_avatars):
                         st.markdown(
@@ -1546,22 +1280,20 @@ with tab_compose:
                             f'padding:.4rem 0; font-size:.82rem;">'
                             f'<div class="segment-badge">{seg.id}</div>'
                             f'<span style="color:var(--text-secondary);">\u2192</span>'
-                            f'<span style="color:var(--text-primary);">'
-                            f"{matched_avatars[i].name}</span></div>",
+                            f"<span>{matched_avatars[i].name}</span></div>",
                             unsafe_allow_html=True,
                         )
                     else:
                         st.warning(
                             f"Сегмент {seg.id} — нет аватара. "
-                            f"Загрузите файл {sid}_clip{seg.id}.mp4 через боковую панель."
+                            f"Загрузите файл {sid}_clip{seg.id}.mp4."
                         )
 
             if avs_count > segs_count:
                 st.info(f"Будут использованы первые {segs_count} из {avs_count} аватаров.")
 
-        # --- Auto timeline preview ---
+        # Auto timeline preview
         if step3_active and matched_avatars:
-            # Override mode for screencasts
             if selected_mode != CompositionMode.OVERLAY:
                 for seg in selected_script.segments:
                     for sc in seg.screencasts:
@@ -1569,14 +1301,12 @@ with tab_compose:
 
             script_to_use = selected_script
             if enable_sync:
-                with st.spinner(f"Запуск Whisper ({whisper_model}) для синхронизации..."):
+                with st.spinner(f"Whisper ({whisper_model}) синхронизация..."):
                     synced = apply_sync(selected_script, matched_avatars, whisper_model)
                     if synced is not selected_script:
                         script_to_use = synced
                     else:
-                        st.warning(
-                            "Синхронизация не удалась. Возможная причина: не установлен openai-whisper."
-                        )
+                        st.warning("Синхронизация не удалась.")
 
             output_path = OUTPUT_DIR / f"{script_to_use.script_id}.mp4"
             try:
@@ -1598,8 +1328,8 @@ with tab_compose:
             timeline = None
             output_path = None
 
-        # --- Compose button ---
-        st.markdown("")  # spacing
+        # Compose button
+        st.markdown("")
         can_compose = step3_active and matched_avatars and timeline is not None
 
         if st.button(
@@ -1609,7 +1339,6 @@ with tab_compose:
             disabled=not can_compose,
         ):
             try:
-                # Pre-processing per mode
                 head_videos = None
                 transparent_avatars = None
 
@@ -1617,9 +1346,7 @@ with tab_compose:
                     with st.spinner("Генерация вырезки головы для PiP..."):
                         head_videos = prepare_pip_videos(matched_avatars, cfg) or None
                     if not head_videos:
-                        st.warning(
-                            "PiP обработка не удалась. Видео будет собрано без вырезки головы."
-                        )
+                        st.warning("PiP обработка не удалась.")
 
                 elif selected_mode == CompositionMode.GREENSCREEN:
                     with st.spinner("Удаление фона аватаров..."):
@@ -1627,17 +1354,14 @@ with tab_compose:
                             prepare_greenscreen_videos(matched_avatars, cfg) or None
                         )
                     if not transparent_avatars:
-                        st.warning("Удаление фона не удалось. Видео будет собрано без хромакея.")
+                        st.warning("Удаление фона не удалось.")
 
-                # Generate subtitles
                 subtitle_file = None
                 if cfg.subtitles.enabled:
                     with st.spinner("Генерация субтитров..."):
                         subtitle_file = generate_subtitles(timeline, matched_avatars, cfg)
                     if not subtitle_file:
-                        st.warning(
-                            "Субтитры не удалось сгенерировать. Видео будет собрано без субтитров."
-                        )
+                        st.warning("Субтитры не удалось сгенерировать.")
 
                 progress_bar = st.progress(0.0, text="Рендеринг...")
                 result_path = compose_video_with_progress(
@@ -1653,15 +1377,13 @@ with tab_compose:
                     music_file=music_path,
                 )
 
-                # Save result to session state
                 st.session_state["last_output"] = result_path
-
                 file_size_mb = result_path.stat().st_size / 1024 / 1024
                 st.success(f"Готово! {result_path.name} ({file_size_mb:.1f} МБ)")
             except (ValueError, FFmpegError) as e:
                 st.error(str(e))
 
-        # --- Show last result (persists across reruns) ---
+        # Show last result
         last_output = st.session_state.get("last_output")
         if last_output and Path(last_output).exists():
             st.video(str(last_output))
@@ -1674,39 +1396,45 @@ with tab_compose:
                     use_container_width=True,
                 )
         elif not can_compose:
-            # Preview placeholder when files are loaded but not ready
             st.markdown(
-                '<div class="preview-placeholder">'
+                '<div class="preview-canvas">'
                 '<div class="gradient-orb"></div>'
-                '<div class="preview-label">ПРЕВЬЮ</div>'
-                '<div class="preview-text">Ожидание файлов</div>'
-                "</div>",
+                '<svg class="wireframe-svg" viewBox="0 0 500 800">'
+                '<ellipse cx="250" cy="400" rx="300" ry="200" fill="none" stroke="black" '
+                'stroke-width="0.5" transform="rotate(-30 250 400)"/>'
+                '<ellipse cx="250" cy="400" rx="300" ry="200" fill="none" stroke="black" '
+                'stroke-width="0.5" transform="rotate(30 250 400)"/>'
+                "</svg>"
+                '<div class="preview-placeholder">'
+                '<div style="text-align:center;">'
+                '<span class="preview-label" style="display:block;">ПРЕВЬЮ</span>'
+                '<span class="preview-text">Ожидание файлов</span>'
+                "</div></div></div>",
                 unsafe_allow_html=True,
             )
 
-        # Status bar
-        est_render = f"~{int(selected_script.total_duration * 1.5)}с" if selected_script else "~45с"
+        # Build bar
+        est_render = f"~{int(selected_script.total_duration * 1.5)}С"
         st.markdown(
-            f'<div class="status-bar">'
-            f'<div class="status-item">Прим. рендер: {est_render}</div>'
-            f'<div class="status-item">Очередь: пусто</div>'
+            f'<div class="build-bar">'
+            f'<div><div class="status-text">ПРИМ. РЕНДЕР: {est_render}</div>'
+            f'<div class="status-text" style="opacity:.5">ОЧЕРЕДЬ: ПУСТО</div></div>'
             f"</div>",
             unsafe_allow_html=True,
         )
 
-        # --- Batch compose ---
+        # Batch compose
         st.markdown("---")
         with st.expander("Пакетная сборка всех скриптов"):
             st.markdown(
                 '<div style="font-size:.85rem; color:var(--text-secondary); margin-bottom:.75rem;">'
                 "Соберёт все загруженные скрипты. Аватары привязываются автоматически "
-                "по префиксу (A1_clip1.mp4 → скрипт A1). Используются текущие настройки."
-                "</div>",
+                "по префиксу. Используются текущие настройки.</div>",
                 unsafe_allow_html=True,
             )
             confirm_batch = st.checkbox(
                 "Подтверждаю пакетную сборку",
-                help="Поставьте галочку и нажмите кнопку ниже для запуска.",
+                help="Поставьте галочку и нажмите кнопку ниже.",
             )
             if st.button(
                 "Собрать все скрипты",
@@ -1724,7 +1452,6 @@ with tab_compose:
                         st.warning(f"[{script.script_id}] Нет подходящих аватаров, пропуск.")
                         continue
 
-                    # Apply mode override
                     if selected_mode != CompositionMode.OVERLAY:
                         for seg in script.segments:
                             for sc in seg.screencasts:
@@ -1739,7 +1466,6 @@ with tab_compose:
                             output_path=batch_output,
                         )
 
-                        # Pre-processing per mode (batch)
                         batch_head_videos = None
                         batch_transparent_avatars = None
 
@@ -1783,7 +1509,6 @@ with tab_compose:
                             except Exception:
                                 batch_transparent_avatars = None
 
-                        # Subtitles for batch
                         batch_subtitle_file = None
                         if cfg.subtitles.enabled:
                             try:
