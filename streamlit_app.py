@@ -177,6 +177,7 @@ html, body, [class*="css"] {
 }
 
 /* Fixed Sidebar Injection */
+/* Fixed Sidebar Injection */
 .custom-sidebar {
     position: fixed;
     top: 0;
@@ -191,9 +192,21 @@ html, body, [class*="css"] {
     align-items: center;
     justify-content: space-between;
     padding: var(--space-lg) 0;
+}
+
+.custom-sidebar span {
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    transform: rotate(180deg);
+    transform: rotate(180deg); /* Keep rotation for main text if desired, or remove if "TIKTOK" should read down */
+    /* The user specificially complained about "full sh*t", so let's stick to standard vertical text reading from bottom-up or top-down cleanly. */
+    /* Design reference suggests bottom-up. */
+}
+
+.custom-sidebar .version {
+    margin-top: auto; 
+    writing-mode: horizontal-tb; /* Keep version horizontal or small at bottom */
+    transform: none;
+    font-size: 10px;
 }
 
 .custom-sidebar span {
@@ -313,40 +326,65 @@ h1, h2, h3 {
     display: none; /* Hide default 'Browse files' button */
 }
 
-/* We can't easily style the internal text of dropzone, but we can overlay or inject content via JS if needed. 
-   For now, we rely on the JS script below to update text. */
-
 /* ── Controls (Settings) ─────────────────────────────────────────── */
 .control-group {
     padding: var(--space-lg);
     border-bottom: 1px solid var(--border-color);
+    min-height: 100px; /* Enforce consistent height for better vertical rhythm */
 }
 
 /* Sliders */
 [data-testid="stSlider"] {
     padding-top: var(--space-md) !important;
     padding-bottom: var(--space-md) !important;
+    position: relative;
+    z-index: 10;
 }
 
+/* Fix Slider Thumb: Diamond shape via pseudo-element so text stays upright */
 [data-testid="stSlider"] [role="slider"] {
-    background: var(--ink) !important;
-    width: 12px !important;
-    height: 12px !important;
-    transform: rotate(45deg) !important;
+    background: transparent !important; /* Transparent container */
+    width: 16px !important;
+    height: 16px !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    transform: none !important; /* NO rotation on container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* The Diamond Shape */
+[data-testid="stSlider"] [role="slider"]::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: var(--ink);
+    transform: rotate(45deg);
+    z-index: -1;
+}
+
+/* Fix Slider Value Label: Just position it, no rotation needed */
+[data-testid="stThumbValue"] {
+    font-family: var(--font-main) !important;
+    font-size: 11px !important;
+    color: var(--ink) !important;
+    background: transparent !important;
+    transform: none !important; /* Ensure no rotation */
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%) !important; /* Center horizontally */
+    width: 40px;
+    text-align: center;
+    pointer-events: none;
 }
 
 [data-testid="stSlider"] [data-baseweb="slider"] > div > div:first-child {
     background: var(--ink) !important;
     height: 1px !important;
-}
-
-[data-testid="stThumbValue"] {
-    font-family: var(--font-main) !important;
-    font-size: 11px !important;
-    color: var(--ink) !important;
 }
 
 /* Selectbox */
@@ -362,10 +400,7 @@ h1, h2, h3 {
     font-size: 14px !important;
 }
 
-/* Checkbox (Toggle style via CSS?) 
-   Streamlit checkboxes are hard to style as reliable IOS toggles without component hacks.
-   We will keep them as checkboxes but styled minimally.
-*/
+/* Checkbox */
 [data-testid="stCheckbox"] label {
     display: flex;
     align-items: center;
@@ -404,6 +439,25 @@ h1, h2, h3 {
     opacity: 0.6;
 }
 
+/* Center Output Content */
+/* The parent of preview-placeholder needs to align it */
+[data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"] > div {
+     /* Target the inner div of markdown in 3rd column if possible, or force canvas itself */
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     height: 100%;
+}
+
+.preview-canvas {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
 .preview-placeholder {
     border: 1px solid var(--ink);
     width: 280px;
@@ -416,6 +470,7 @@ h1, h2, h3 {
     z-index: 2;
     position: relative;
     flex-direction: column;
+    margin: auto; /* Force Centering */
 }
 
 .preview-text {
@@ -484,12 +539,39 @@ h1, h2, h3 {
     opacity: 0.4;
 }
 
-/* ── Hide spacing in columns ────────────────────────────────────── */
-[data-testid="stVerticalBlock"] > div {
-    gap: 0 !important;
+/* ── Spacing in Columns ──────────────────────────────────────────── */
+[data-testid="stVerticalBlock"] {
+    gap: 0 !important; /* Control via element margins */
 }
+
 .stElementContainer {
-    margin: 0 !important;
+    margin: 0 0 var(--space-md) 0 !important; /* Consistent bottom spacing */
+}
+
+/* Remove bottom margin from the last element to avoid double padding */
+.stElementContainer:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* ── Output Column Alignment ─────────────────────────────────────── */
+/* Center EVERYTHING in the 3rd column (Output) */
+[data-testid="stColumn"]:nth-child(3) [data-testid="stVerticalBlock"] {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Ensure video/images are also centered */
+[data-testid="stColumn"]:nth-child(3) .stVideo, 
+[data-testid="stColumn"]:nth-child(3) .stImage {
+    margin: auto;
+    max-width: 100%;
+}
+
+[data-testid="stColumn"]:nth-child(3) video {
+    max-height: 80vh; /* Prevent overflow */
 }
 </style>
 
